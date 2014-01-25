@@ -138,7 +138,10 @@
     	$(document).ready(function() {
     		$.getJSON( "/api/v1/list", function( data ) {
     			$.each( data, function( key, val ) {
-    				$('#files').dataTable().fnAddData([val.filename,val.size,val.lastmodified]);
+    				if(val.size)
+    					$('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>',val.size,val.lastmodified]);
+    				else
+    					$('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
     			});
     			
     		});

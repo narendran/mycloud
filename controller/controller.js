@@ -73,7 +73,9 @@ function convertFromGoogleFile(file) {
   return {
     'filename': file.title,
     'size': file.fileSize,
-    'lastmodified': file.modifiedDate
+    'lastmodified': file.modifiedDate,
+    'url': file.alternateLink,
+    'editable': file.editable
   }
 }
 
@@ -172,8 +174,9 @@ app.get(API_ROOT + '/update', function (request, response) {
 });
 
 app.get("/", function (req, res) {
+  var file = req.User ? '/webui/home.html' : '/webui/index.html';
   var fs = require('fs');
-  fs.readFile(__dirname + '/webui/home.html', function (err, data) {
+  fs.readFile(__dirname + file, function (err, data) {
     if (err) {
       res.writeHead(500);
       return res.end(err.toString());
