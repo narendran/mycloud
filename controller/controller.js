@@ -1,4 +1,6 @@
 var express = require('express');
+var googleapis = require('googleapis')
+var app = express();
 var MongoStore = require('connect-mongo')(express);
 
 var everyauth = require('everyauth');
@@ -67,6 +69,37 @@ app.use(express.bodyParser())
     }))
    .use(everyauth.middleware());
 
+DRIVE_AUTH_TOKEN_RADHE = 'ya29.1.AADtN_W1Ia2MH3qom4KYLBjKurH4yoCidEYbay8INoJnD_DIgIhk_jZbRLf5F5OIvOH-Kw'
+
+function convertFromGoogleFile(file) {
+  return {
+    'filename': file.title,
+    'size': file.fileSize,
+    'lastmodified': file.modifiedDate
+  }
+}
+
+function getGoogleAuth(request) {
+  var auth=  new googleapis.OAuth2Client();
+    auth.setCredentials({
+      access_token: request.google_access_token  // This is fetched from user.
+    });
+  return auth;
+};
+
+/*  // Used for debugging
+googleapis.discover('drive', 'v2').execute(function(err, client) {
+    var auth = getGoogleAuth(null)
+    client
+        .drive.files.list({'maxResults': '1'})
+        .withAuthClient(auth)
+        .execute(function(err, result) {
+            console.log('error:', err, 'inserted:', result)
+        });
+});/**/
+
+
+
 app.engine('.html', require('ejs').__express);
 app.set('views', __dirname + '/webui');
 app.get("/", function handler (req, res) {
@@ -84,9 +117,30 @@ app.configure(function(){
 app.get(API_ROOT + '/list', function (request, response) {
   console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify(
-    [{'filename': 'cat.jpg', 'size': '2000','lastmodified':'somedate','url':'http://drive.google.com/sdfsdf','shared':'True','editable':'False'}
-    , {'filename': 'dog.jpg', 'size': '1000','lastmodified':'someotherdate','url':'http://dropbox.com/ef44','shared':'False','editable':'False'}]));
+  var json_response = new Array();
+  // Should get auth token here.
+  // Get authtoken from all services.
+  var auth = getGoogleAuth(request);
+  console.log("Before making call");
+  console.log(new Date());
+  googleapis.discover('drive', 'v2').execute(function(err, client) {
+    client
+        .drive.files.list({'maxResults': '10'})
+        .withAuthClient(auth)
+        .execute(function(err, result) {
+          for (var i=0; i<result.items.length; i++) {
+            console.log('error:', err, 'inserted:', result.items[i]['title']);
+            json_response.push(convertFromGoogleFile(result.items[i]))
+          }
+          console.log("After finishing call");
+          console.log(new Date());
+          response.end(JSON.stringify(json_response));
+        });
+  console.log("After making call");
+  console.log(new Date());
+  });
+  
+  //response.writeHead(200, json_response);
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
