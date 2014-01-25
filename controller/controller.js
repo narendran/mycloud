@@ -5,6 +5,7 @@ var app = express();
 var API_ROOT = '/api/v1';
 var PORT = 5000;
 
+<<<<<<< HEAD
 DRIVE_AUTH_TOKEN_RADHE = 'ya29.1.AADtN_VHxYiorzy8NhToWQ0wIJsSL-oCkARdiotlfJShbzDA7pgb6tkf6cklYPVaBQwymg'
 
 
@@ -29,6 +30,14 @@ googleapis.discover('drive', 'v2').execute(function(err, client) {
 
 
 
+=======
+app.engine('.html', require('ejs').__express);
+app.set('views', __dirname + '/webui');
+app.get("/", function handler (req, res) {
+  res.render('home.html');
+});
+
+>>>>>>> 8ba1d32dd5aaf74ab872a0bcbc8ff2e8b56615d7
 app.configure(function(){
   app.use(express.static(__dirname + '/webui'));
   app.use(express.errorHandler({
@@ -38,6 +47,7 @@ app.configure(function(){
 });
 
 app.get(API_ROOT + '/list', function (request, response) {
+<<<<<<< HEAD
   response.writeHead(200, {});
   var json_response = {
     'Content-Type' : 'application/json',
@@ -59,6 +69,12 @@ app.get(API_ROOT + '/list', function (request, response) {
   });
   response.writeHead(200, json_response);
   response.end(JSON.stringify({'status': 'TODO: List'}));
+=======
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+  response.end(JSON.stringify(
+    [{'filename': 'cat.jpg', 'size': '2000','lastmodified':'somedate','url':'http://drive.google.com/sdfsdf','shared':'True','editable':'False'}
+    , {'filename': 'dog.jpg', 'size': '1000','lastmodified':'someotherdate','url':'http://dropbox.com/ef44','shared':'False','editable':'False'}]));
+>>>>>>> 8ba1d32dd5aaf74ab872a0bcbc8ff2e8b56615d7
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
