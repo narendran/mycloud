@@ -68,6 +68,12 @@ app.use(express.bodyParser())
     }))
    .use(everyauth.middleware());
 
+app.engine('.html', require('ejs').__express);
+app.set('views', __dirname + '/webui');
+app.get("/", function handler (req, res) {
+  res.render('home.html');
+});
+
 app.configure(function(){
   app.use(express.static(__dirname + '/webui'));
   app.use(express.errorHandler({
@@ -79,7 +85,9 @@ app.configure(function(){
 app.get(API_ROOT + '/list', function (request, response) {
   console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': 'TODO: List'}));
+  response.end(JSON.stringify(
+    [{'filename': 'cat.jpg', 'size': '2000','lastmodified':'somedate','url':'http://drive.google.com/sdfsdf','shared':'True','editable':'False'}
+    , {'filename': 'dog.jpg', 'size': '1000','lastmodified':'someotherdate','url':'http://dropbox.com/ef44','shared':'False','editable':'False'}]));
 });
 
 app.get(API_ROOT + '/read', function (request, response) {

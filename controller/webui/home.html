@@ -12,6 +12,8 @@
 	<link href="css/signinslide.css" rel="stylesheet">
 	<link href="css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet">
 	<link href="css/jquery.cluetip.css" rel="stylesheet">
+	<link href="//datatables.net/download/build/nightly/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+	<link rel="stylesheet" type="text/css" href="css/DT_bootstrap.css">
 	<style type="text/css">
 		body {
 			padding-top: 40px;
@@ -97,7 +99,7 @@
 				<h1>Files listing</h1>
 			</div>
 			<div>
-				<table width="100%" id="files">
+				<table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="files">
 					<thead>
 						<tr>
 							<th>File name</th>
@@ -106,18 +108,20 @@
 						</tr>
 					</thead>
 					<tbody>
-						<span id="file_listing"></span>
-					</tbody></table>
-				</div>
-			</div>
+						
+					</tbody>
+				</table>
 
-		</div>
-
-		<div id="footer">
-			<div class="container">
-				<p class="text-muted">Space used : 15 GB ; Free Space available : 1.5 GB</p>
 			</div>
 		</div>
+
+	</div>
+
+	<div id="footer">
+		<div class="container">
+			<p class="text-muted">Space used : 15 GB ; Free Space available : 1.5 GB</p>
+		</div>
+	</div>
 
 
     <!-- Bootstrap core JavaScript
@@ -127,9 +131,18 @@
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
     <script src="js/jquery.cluetip.min.js"></script>
+    <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf-8" language="javascript" src="js/DT_bootstrap.js"></script>
     <script type="text/javascript">
 
     	$(document).ready(function() {
+    		$.getJSON( "/api/v1/list", function( data ) {
+    			$.each( data, function( key, val ) {
+    				$('#files').dataTable().fnAddData([val.filename,val.size,val.lastmodified]);
+    			});
+    			
+    		});
+    		$('#files').dataTable();
     		$("#contactLink").click(function() {
     			if ($("#contactForm").is(":hidden")) {
     				$("#contactForm").slideDown("slow");
@@ -144,20 +157,7 @@
     			'$("#messageSent").hide();$("#contactForm").slideUp("slow")',
     			2000);
     	}
-    	$.getJSON( "/api/v1/list", function( data ) {
-    		var items = [];
-    		$.each( data, function( key, val ) {
-    			items.push( "<li id='" + key + "'>" + val + "</li>" );
-    		});
-
-    		$( "<ul/>", {
-    			"class": "my-new-list",
-    			html: items.join( "" )
-    		}).appendTo( "body" );
-    	});
-    	// $(document).ready(function() {
-    	// 	$('#files').dataTable();
-    	// } );
+    	
     </script>
 </script>
 </body>
