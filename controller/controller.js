@@ -19,7 +19,7 @@ var findOrCreateUserByGoogleData = function(googleMetadata, promise) {
        user.given_name = googleMetadata.given_name;
        user.family_name = googleMetadata.family_name;
        user.picture = googleMetadata.picture;
-       user.access_token = googleMetadata.id_token;
+       user.gdrive_access_token = googleMetadata.id_token;
        user.save(function(err) {
          if(err) throw err;
          promise.fulfill(user);
@@ -40,8 +40,7 @@ everyauth.google
     console.log('Access Token:', accessToken);
     console.log('Access Token Extra:', accessTokenExtra);
     console.log('User Metadata:', googleUserMetadata);
-    googleUserMetadata.id_token = accessTokenExtra.id_token;
-    googleUserMetadata.expires_in = accessTokenExtra.expires_in;
+    googleUserMetadata.id_token = accessToken;
     console.log("User data returned from Google: ", googleUserMetadata);
     var promise = this.Promise();
     findOrCreateUserByGoogleData(googleUserMetadata, promise);

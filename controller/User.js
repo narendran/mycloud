@@ -5,7 +5,7 @@ var User = new config.mongoose.Schema({
   given_name: {type: String, required: true},
   family_name: {type: String, required: true},
   picture: {type: String},
-  access_token: {type: String, required: true}
+  gdrive_access_token: {type: String}
 });
 
 module.exports = User;
