@@ -1,13 +1,78 @@
 var express = require('express');
 var googleapis = require('googleapis')
 var app = express();
+var MongoStore = require('connect-mongo')(express);
+
+var everyauth = require('everyauth');
+var config = require('./config');
+
+var UserModel = config.mongoose.model('User', require('./User'));
 
 var API_ROOT = '/api/v1';
-var PORT = 5000;
+var findOrCreateUserByGoogleData = function(googleMetadata, promise) {
+  console.log(googleMetadata);
+  UserModel.find({'id': googleMetadata.id}, function(err, users) {
+    if(err) throw err;
+    if(users.length > 0) {
+       promise.fulfill(users[0]);
+     } else {
+       var user = new UserModel();
+       user.id = googleMetadata.id;
+       user.given_name = googleMetadata.given_name;
+       user.family_name = googleMetadata.family_name;
+       user.picture = googleMetadata.picture;
+       user.access_token = googleMetadata.id_token;
+       user.save(function(err) {
+         if(err) throw err;
+         promise.fulfill(user);
+       });
+     }
+  });
+};
 
-DRIVE_AUTH_TOKEN_RADHE = 'ya29.1.AADtN_WlzM707qSCU5dfKyXfvnmJ1sG4IoisGkYn733JFsqx6hjKo5EgSxGFyPmkMa2AOw'
+everyauth.google
+  .entryPath('/auth/google')
+  .callbackPath('/auth/google/callback')
+  .appId(config.google.appId)
+  .appSecret(config.google.appSecret)
+  .scope('https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly.metadata https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile')
+  .authQueryParam({access_type:'online', approval_prompt:'auto'})
+  .findOrCreateUser(function (session, accessToken, accessTokenExtra, googleUserMetadata) {
+    console.log('Session:', session);
+    console.log('Access Token:', accessToken);
+    console.log('Access Token Extra:', accessTokenExtra);
+    console.log('User Metadata:', googleUserMetadata);
+    googleUserMetadata.id_token = accessTokenExtra.id_token;
+    googleUserMetadata.expires_in = accessTokenExtra.expires_in;
+    console.log("User data returned from Google: ", googleUserMetadata);
+    var promise = this.Promise();
+    findOrCreateUserByGoogleData(googleUserMetadata, promise);
+    return promise;
+  })
+  .myHostname(config.hostName)
+  .redirectPath('/');
 
-function extractEssentialInfoForFile(file) {
+everyauth.everymodule.findUserById(function(userId, callback) {
+    UserModel.find({'id': userId}, function(err, users) {
+      if(err) throw err;
+      callback(null, users[0]);
+    });
+  });
+
+var app = express();
+
+app.use(express.bodyParser())
+   .use(express.logger())
+   .use(express.cookieParser('miketesting'))
+   .use(express.session({
+      secret: 'FxT10477A93d54HJx5',
+      store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
+    }))
+   .use(everyauth.middleware());
+
+DRIVE_AUTH_TOKEN_RADHE = 'ya29.1.AADtN_W1Ia2MH3qom4KYLBjKurH4yoCidEYbay8INoJnD_DIgIhk_jZbRLf5F5OIvOH-Kw'
+
+function convertFromGoogleFile(file) {
   return {
     'filename': file.title,
     'size': file.fileSize,
@@ -18,11 +83,12 @@ function extractEssentialInfoForFile(file) {
 function getGoogleAuth(request) {
   var auth=  new googleapis.OAuth2Client();
     auth.setCredentials({
-      access_token: DRIVE_AUTH_TOKEN_RADHE  // Fetch from DB for the user.
+      access_token: request.google_access_token  // This is fetched from user.
     });
   return auth;
 };
 
+/*  // Used for debugging
 googleapis.discover('drive', 'v2').execute(function(err, client) {
     var auth = getGoogleAuth(null)
     client
@@ -31,7 +97,7 @@ googleapis.discover('drive', 'v2').execute(function(err, client) {
         .execute(function(err, result) {
             console.log('error:', err, 'inserted:', result)
         });
-});
+});/**/
 
 
 
@@ -50,24 +116,32 @@ app.configure(function(){
 });
 
 app.get(API_ROOT + '/list', function (request, response) {
+  console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
   var json_response = new Array();
   // Should get auth token here.
   // Get authtoken from all services.
   var auth = getGoogleAuth(request);
+  console.log("Before making call");
+  console.log(new Date());
   googleapis.discover('drive', 'v2').execute(function(err, client) {
     client
-        .drive.files.list({'maxResults': '1'})
+        .drive.files.list({'maxResults': '10'})
         .withAuthClient(auth)
         .execute(function(err, result) {
           for (var i=0; i<result.items.length; i++) {
-            console.log('error:', err, 'inserted:', result.items[i]['title'])
-            json_response.push(extractEssentialInfoForFile(result.items[i]))
+            console.log('error:', err, 'inserted:', result.items[i]['title']);
+            json_response.push(convertFromGoogleFile(result.items[i]))
           }
+          console.log("After finishing call");
+          console.log(new Date());
+          response.end(JSON.stringify(json_response));
         });
+  console.log("After making call");
+  console.log(new Date());
   });
+  
   //response.writeHead(200, json_response);
-  response.end(JSON.stringify(json_response));
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
@@ -100,7 +174,7 @@ app.get(API_ROOT + '/update', function (request, response) {
   response.end(JSON.stringify({'status': 'TODO: Update'}));
 });
 
-app.get("/", function handler (req, res) {
+app.get("/", function (req, res) {
   var fs = require('fs');
   fs.readFile(__dirname + '/webui/home.html', function (err, data) {
     if (err) {
@@ -112,4 +186,6 @@ app.get("/", function handler (req, res) {
   });
 });
 
-app.listen(PORT);
+app.listen(config.port, function() {
+  console.log('Listening on port ', config.port);
+});
