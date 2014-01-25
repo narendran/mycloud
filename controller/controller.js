@@ -91,7 +91,6 @@ app.get(API_ROOT + '/list/:mimeType', function (request, response) {
       AuthGoogle.listfiles(request, consolidatedList, callback);  
     }
   }
-  
 
 });
 
@@ -111,8 +110,41 @@ app.get(API_ROOT + '/move', function (request, response) {
 });
 
 app.get(API_ROOT + '/search', function (request, response) {
+  console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': 'TODO: Search'}));
+  var json_response = new Array();
+  // Should get auth token here.
+  // Get authtoken from all services.
+  var auth = AuthGoogle.getGoogleAuth(request);
+  var search_key = "\'Service\'"  // Should be obtained from request. Should be enclosed within quotes
+  console.log("SearchKey: " + search_key)
+
+  // TODO: This auth check should likely happen earlier.
+  if (! auth) {
+    response.end(JSON.stringify({'error': 'Not logged in'}));
+    return;
+  }
+
+  console.log("Before making call");
+  console.log(new Date());
+  googleapis.discover('drive', 'v2').execute(function(err, client) {
+    var search_query = 'fullText contains ' +search_key;
+    var query_obj= {'maxResults':10, 'q':search_query}
+    console.log("query: " + JSON.stringify(query_obj))
+    client
+        .drive.files.list(query_obj)
+        .withAuthClient(auth)
+        .execute(function(err, result) {
+          if (err) {
+            console.error('Error while fetching file list: ', err, 'with result', result);
+          }
+          for (var i=0; i<result.items.length; i++) {
+            console.log('error:', err, 'inserted:', result.items[i]['title']);
+            json_response.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
+          }
+          response.end(JSON.stringify(json_response));
+        });
+  });
 });
 
 app.get(API_ROOT + '/delete/:fileid', function (request, response) {
@@ -137,6 +169,36 @@ app.get(API_ROOT + '/delete/:fileid', function (request, response) {
 app.get(API_ROOT + '/update', function (request, response) {
   response.writeHead(200, {'Content-Type' : 'application/json'});
   response.end(JSON.stringify({'status': 'TODO: Update'}));
+});
+
+app.get(API_ROOT + '/info', function(request, response) {
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+
+  console.log('User', request.user);
+  if (! request.user) {
+    response.end(JSON.stringify({'error': 'Not logged in'}));
+    return;
+  }
+
+  var consolidatedInfo = {
+    info: {
+      free_bytes: 0,
+      used_bytes: 0,
+      total_bytes: 0
+    },
+    // 1 => Number of callbacks to wait for before publishing responses.
+    // Right now, we only wait for a Google drive response.
+    counter: 1
+  };
+
+  var callback = function() {
+    console.log('Waiting for', consolidatedInfo.counter, 'more responses from backends.');
+    if (consolidatedInfo.counter <= 0) {
+      response.end(JSON.stringify(consolidatedInfo.info));
+    }
+  };
+
+  AuthGoogle.getinfo(request, consolidatedInfo, callback);
 });
 
 app.get("/media.html", function (req, res) {

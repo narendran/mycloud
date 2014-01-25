@@ -84,6 +84,35 @@ AuthGoogle.getGoogleAuth = function(request) {
   return auth;
 };
 
+AuthGoogle.getinfo = function(request, consolidated, callback) {
+  var auth = AuthGoogle.getGoogleAuth(request);
+
+  googleapis.discover('drive', 'v2').execute(
+    function(err, client) {
+      client
+        .drive.about.get()
+        .withAuthClient(auth)
+        .execute(function(err, result) {
+          console.log('Error:', err);
+          console.log('Result:', result);
+          var driveUsedBytes = parseInt(result['quotaBytesUsed']);
+          var totalBytes = parseInt(result['quotaBytesTotal']);
+
+          // Include Drive/Gmail/Plus etc
+          var totalUsedBytes = parseInt(result['quotaBytesUsedAggregate']);
+          var freeBytes = totalBytes - totalUsedBytes;
+          var totalAvailableBytes = freeBytes + driveUsedBytes;
+
+          consolidated.info.free_bytes += freeBytes;
+          consolidated.info.used_bytes += driveUsedBytes;
+          consolidated.info.total_bytes += totalAvailableBytes;
+
+          consolidated.counter --;
+          callback(consolidated);
+        })
+    });
+}
+
 AuthGoogle.listfiles = function(request, consolidated, callback) {
   var auth = AuthGoogle.getGoogleAuth(request);
   var mimeTypeReq = request.params.mimeType.replace("\.","/");
