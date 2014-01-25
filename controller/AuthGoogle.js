@@ -69,7 +69,10 @@ AuthGoogle.convertFromGoogleFile = function(file) {
     'size': file.fileSize,
     'lastmodified': file.modifiedDate,
     'url': file.alternateLink,
-    'editable': file.editable
+    'editable': file.editable,
+    'thumbnail': file.thumbnailLink,
+    'embed' : file.embedLink,
+    'id' : file.id
   }
 }
 

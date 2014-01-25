@@ -23,7 +23,7 @@
 		}
 
 		.thumb {
-			margin-bottom: 30px;
+			margin-bottom: 20px;
 		}
 
 	</style>
@@ -33,7 +33,7 @@
 
 	<div id="wrap">
 
-
+	
 		<div class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
 			<div class="container">
 				<div class="span10">
@@ -54,75 +54,30 @@
 
 		<!-- Begin page content -->
 		<div class="container">
-
+			<audio src="https://docs.google.com/file/d/0BwsMqfm3Zup4Q0hFV0NVUzJFUHc/edit"></audio>
+		<hr><h1>Images
 			<div class="row">
-
-				<div class="col-lg-12">
-					<h1 class="page-header">Images</h1>
-				</div>
-
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
-				<div class="col-lg-3 col-md-4 col-xs-6 thumb">
-					<a class="thumbnail" href="#">
-						<img class="img-responsive" src="http://placehold.it/400x300">
-					</a>
-				</div>
+			<div id="img-content"></div>
+			<hr>
 			</div>
+		</div>
 
+		<!-- Begin video content -->
+		<div class="container">
+		<hr><h1>Video</h1>
+			<div class="row">
+			<div id="vid-content"></div>
+			<hr>
+			</div>
+		</div>
+
+		<!-- Begin audio content -->
+		<div class="container">
+		<hr><h1>Audio</h1>
+			<div class="row">
+			<div id="aud-content"></div>
+			<hr>
+			</div>
 		</div>
 
 		<div id="footer">
@@ -141,6 +96,36 @@
     <script src="js/jquery.cluetip.min.js"></script>
     <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
     <script type="text/javascript" charset="utf-8" language="javascript" src="js/DT_bootstrap.js"></script>
+    <script type="text/javascript">
+    $.getJSON( "/api/v1/list/image", function( data ) {
+
+    			$.each( data, function( key, val ) {
+    				var content = "<div class=\"col-lg-3 col-md-4 col-xs-6 thumb\"><a class=\"thumbnail\" href=\"#\"><img class=\"img-responsive\" src=\""+val.thumbnail+"\"></a></div>";
+    				$('#img-content').append(content);
+    			});
+    			
+    		});
+
+    $.getJSON( "/api/v1/list/video", function( data ) {
+
+    			$.each( data, function( key, val ) {
+    				console.log("Video URL  :"+val.embed);
+    				var content = "<div><iframe src=\""+val.url.replace("edit?usp=drivesdk","preview")+"\" width=\"640\" height=\"385\"></iframe><br/>"+val.filename+"<br/><br/></div>";
+    				$('#vid-content').append(content);
+    			});
+    			
+    		});
+
+    $.getJSON( "/api/v1/list/audio", function( data ) {
+
+    			$.each( data, function( key, val ) {
+    				var content = "<div class=\"col-lg-3 col-md-4 col-xs-6 thumb\"><audio controls><source src=\""+val.url+"\" type=\"audio/mpeg\">Your browser does not support the audio element.</audio><br/>"+val.filename+"</div>";
+    				$('#aud-content').append(content);
+    			});
+    			
+    		});
+
+    </script>
 
 </script>
 </body>
