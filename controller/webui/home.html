@@ -12,7 +12,7 @@
 	<link href="css/signinslide.css" rel="stylesheet">
 	<link href="css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet">
 	<link href="css/jquery.cluetip.css" rel="stylesheet">
-	<link href="//datatables.net/download/build/nightly/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+	<link href="css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
 	<link rel="stylesheet" type="text/css" href="css/DT_bootstrap.css">
 	<style type="text/css">
 		body {
@@ -20,6 +20,11 @@
 			/* 60px to make the container go all the way to the bottom of the topbar */
 			background-image:url(css/images/brickwall.png); background-repeat:repeat;
 		}
+
+		.green {
+			font-weight:bold;
+		}
+
 	</style>
 </head>
 
@@ -39,57 +44,6 @@
 							<li><a href="#contact">Media</a></li>
 						</ul>
 					</div><!--/.nav-collapse -->
-				</div>
-
-				<div class="span2">
-					<div id="contactFormContainer">
-						<div id="contactForm">
-							<div class="fbtable">
-								<div class="controls">
-									OPEN ID
-								</div>
-							</div>
-
-							<form id="registrationForm" action="php/register.php">
-								<div class="controls">
-									<div class="input-prepend">
-										<span class="add-on"><i class="icon-user"></i></span> <input
-										type="text" class="input-large" id="name" name="name"
-										placeholder="Name (for registration)">
-									</div>
-								</div>
-
-								<span id="type"></span>
-
-								<input type="hidden" name="usertype" id="usertype">
-
-								<div class="controls">
-									<div class="input-prepend">
-										<span class="add-on"><i class="icon-envelope"></i></span> <input
-										type="text" class="input-large" id="email" name="email"
-										placeholder="Email">
-									</div>
-								</div>
-								<div class="controls">
-									<div class="input-prepend">
-										<span class="add-on"><i class="icon-lock"></i></span> <input
-										type="Password" id="password" class="input-large"
-										name="password" placeholder="Password">
-									</div>
-								</div>
-
-							</form>
-							<center>
-								<div class="controls">
-									<button type="submit" class="btn btn-success" onclick="$('#registrationForm').attr('action','/signage/php/register.php');
-									$('#registrationForm').submit();">Register</button>
-									<button type="submit" class="btn btn-success" onclick="$('#registrationForm').attr('action','/signage/php/login.php');
-									$('#registrationForm').submit();">Sign In</button>					
-								</div>
-							</center>
-						</div>
-						<div id="contactLink"></div>
-					</div>
 				</div>
 			</div>
 		</div>
@@ -138,10 +92,18 @@
     	$(document).ready(function() {
     		$.getJSON( "/api/v1/list", function( data ) {
     			$.each( data, function( key, val ) {
-    				if(val.size)
-    					$('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>',val.size,val.lastmodified]);
-    				else
-    					$('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
+    				var retval;
+    				if(val.size) {
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>',val.size,val.lastmodified]);
+    				}
+    				else {
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
+    				}
+    				console.log(val.editable);
+    				if(val.editable==true) {
+    					var nTr = $('#files').dataTable().fnSettings().aoData[ retval[0] ].nTr;
+    					nTr.className = "green";
+    				}
     			});
     			
     		});

@@ -128,7 +128,7 @@ app.get(API_ROOT + '/list', function (request, response) {
   console.log(new Date());
   googleapis.discover('drive', 'v2').execute(function(err, client) {
     client
-        .drive.files.list({'maxResults': '10'})
+        .drive.files.list({'maxResults': '20'})
         .withAuthClient(auth)
         .execute(function(err, result) {
           if (err) {
