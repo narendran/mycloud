@@ -43,7 +43,7 @@ app.configure(function(){
   }));
 });
 
-app.get(API_ROOT + '/list', function (request, response) {
+app.get(API_ROOT + '/list/:mimeType', function (request, response) {
   console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
   var json_response = new Array();
@@ -56,12 +56,19 @@ app.get(API_ROOT + '/list', function (request, response) {
     response.end(JSON.stringify({'error': 'Not logged in'}));
     return;
   }
-
+  mimeTypeReq = request.params.mimeType.replace("\.","/");
   console.log("Before making call");
   console.log(new Date());
+  console.log('MIMETYPE requested is '+mimeTypeReq);
+  var filter;
+  if(mimeTypeReq=='all'){
+    filter = {'maxResults': '20'};
+  } else {
+    filter = {'maxResults': '20', 'q':'mimeType contains \''+mimeTypeReq+'\''}
+  }
   googleapis.discover('drive', 'v2').execute(function(err, client) {
     client
-        .drive.files.list({'maxResults': '20'})
+        .drive.files.list(filter)
         .withAuthClient(auth)
         .execute(function(err, result) {
           if (err) {
