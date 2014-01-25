@@ -1,3 +1,79 @@
+var express = require('express');
+var app = express();
+var MongoStore = require('connect-mongo')(express);
+
+var everyauth = require('everyauth');
+var config = require('./config');
+
+var dbox = require("dbox");
+var dropbox   = dbox.app({ "app_key": "n7ick3jdpi3o9dd", "app_secret": "8n3dkgkkwq8g50v" })
+
+
+
+var UserModel = config.mongoose.model('User', require('./User'));
+
+var API_ROOT = '/api/v1';
+
+
+app.use(express.bodyParser())
+   .use(express.logger())
+   .use(express.cookieParser('miketesting'))
+   .use(express.session({
+      secret: 'FxT10477A93d54HJx5',
+      store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
+    }))
+   .use(everyauth.middleware());
+
+
+
+
+var everyauth = require('everyauth');
+var config = require('./config');
+
+var UserModel = config.mongoose.model('User', require('./User'));
+
+var API_ROOT = '/api/v1';
+
+app.engine('.html', require('ejs').__express);
+app.set('views', __dirname + '/webui');
+app.get("/", function handler (req, res) {
+  res.render('home.html');
+});
+
+
+app.configure(function(){
+  app.use(express.static(__dirname + '/webui'));
+  app.use(express.errorHandler({
+    dumpExceptions: true, 
+    showStack: true
+  }));
+});
+
+var app = express();
+
+app.use(express.bodyParser())
+   .use(express.logger())
+   .use(express.cookieParser('miketesting'))
+   .use(express.session({
+      secret: 'FxT10477A93d54HJx5',
+      store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
+    }))
+   .use(everyauth.middleware());
+
+app.engine('.html', require('ejs').__express);
+app.set('views', __dirname + '/webui');
+app.get("/", function handler (req, res) {
+  res.render('home.html');
+});
+
+app.configure(function(){
+  app.use(express.static(__dirname + '/webui'));
+  app.use(express.errorHandler({
+    dumpExceptions: true,
+    showStack: true
+  }));
+});
+
 
 function requestToken(res) {
     app.requesttoken(function(status, req_token) {
@@ -63,35 +139,14 @@ everyauth.dropbox
 console.log('this is printed');
 
 
-var app = express();
 
-app.use(express.bodyParser())
-   .use(express.logger())
-   .use(express.cookieParser('miketesting'))
-   .use(express.session({
-      secret: 'FxT10477A93d54HJx5',
-      store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
-    }))
-   .use(everyauth.middleware());
-
-
-app.engine('.html', require('ejs').__express);
-app.set('views', __dirname + '/webui');
-app.get("/", function handler (req, res) {
-  res.render('home.html');
-});
-
-app.configure(function(){
-  app.use(express.static(__dirname + '/webui'));
-  app.use(express.errorHandler({
-    dumpExceptions: true,
-    showStack: true
-  }));
-});
-function listFiles(uid, dir, response) {
-    cachedMetadata(uid, dir, function(metadata) {
-        var hash = metadata ?	 metadata.hash : null;
-        var client = dropbox.client(auth_token);
+app.get(API_ROOT + '/list', function (request, response) {
+  console.log('User', request.user);
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+  var json_response = new Array();
+  // Should get auth token here.
+  // Get authtoken from all services.
+        var client = dropbox.client('8n3dkgkkwq8g50v');
         client.metadata(dir, {hash : hash}, function(status, reply) {
             if (status != 304) {
                 metadata = reply;
@@ -100,30 +155,6 @@ function listFiles(uid, dir, response) {
             response.write(metadata);
             response.end();
         });
-    });
-}
-
-
-
-app.get(API_ROOT + '/list', function (request, response) {
-  console.log('User', request.user);
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  var json_response = new Array();
-  // Should get auth token here.
-  // Get authtoken from all services.
- requestToken(res);	
-  var dropboxClient = dropbox.client(res.auth_token);
- //var auth = getDropBoxAuth(request);
-  console.log("Before making call");
-  console.log(new Date());
-  var parsedPath = /\/([0-9]+)(\/.*)$/.exec(request.url);
-  listFiles(parsedPath[1] /* uid */, parsedPath[2] /* dir */, response);	
-    
-  console.log("After making call");
-  console.log(new Date());
-  });
-  
-  //response.writeHead(200, json_response);
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
@@ -157,8 +188,9 @@ app.get(API_ROOT + '/update', function (request, response) {
 });
 
 app.get("/", function (req, res) {
+  var file = req.User ? '/webui/home.html' : '/webui/index.html';
   var fs = require('fs');
-  fs.readFile(__dirname + '/webui/home.html', function (err, data) {
+  fs.readFile(__dirname + file, function (err, data) {
     if (err) {
       res.writeHead(500);
       return res.end(err.toString());
@@ -171,3 +203,34 @@ app.get("/", function (req, res) {
 app.listen(config.port, function() {
   console.log('Listening on port ', config.port);
 });
+
+
+function listFiles(uid, dir, response) {
+    cachedMetadata(uid, dir, function(metadata) {
+        var hash = metadata ?	 metadata.hash : null;
+	// auth token for dropbox
+        var client = dropbox.client('8n3dkgkkwq8g50v');
+        client.metadata(dir, {hash : hash}, function(status, reply) {
+            if (status != 304) {
+                metadata = reply;
+                cacheMetadata(uid, dir, metadata);
+            }
+            response.write(metadata);
+            response.end();
+        });
+    });
+}
+
+function cachedMetadata(uid, dir, callback) {
+    db.collection("user", function(err, collection) {
+        var query = {}, fields = {};
+        query.uid = uid;
+        query["metadata." + dir] = {$exists : true};
+        fields["metadata." + dir] = 1;
+        collection.findOne(query, {fields: fields}, function(err, result) {
+            callback(result ? result.metadata[dir] : null);
+        });
+    });
+}
+
+

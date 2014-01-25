@@ -111,8 +111,22 @@ app.get(API_ROOT + '/update', function (request, response) {
   response.end(JSON.stringify({'status': 'TODO: Update'}));
 });
 
+app.get("/media.html", function (req, res) {
+  var file = req.user!=undefined ? '/webui/media.html' : '/webui/index.html';
+  var fs = require('fs');
+  fs.readFile(__dirname + file, function (err, data) {
+    if (err) {
+      res.writeHead(500);
+      return res.end(err.toString());
+    }
+    res.writeHead(200);
+    res.end(data);
+  });
+});
+
 app.get("/", function (req, res) {
-  var file = req.User ? '/webui/home.html' : '/webui/index.html';
+  console.log(req.toString(),'color: green;');
+  var file = req.user!=undefined ? '/webui/home.html' : '/webui/index.html';
   var fs = require('fs');
   fs.readFile(__dirname + file, function (err, data) {
     if (err) {

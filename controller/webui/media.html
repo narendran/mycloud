@@ -12,19 +12,26 @@
 	<link href="css/signinslide.css" rel="stylesheet">
 	<link href="css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet">
 	<link href="css/jquery.cluetip.css" rel="stylesheet">
+	<link href="css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+	<link rel="stylesheet" type="text/css" href="css/DT_bootstrap.css">
 	<style type="text/css">
-	body {
-		padding-top: 40px;
-		/* 60px to make the container go all the way to the bottom of the topbar */
-		background-image:url(css/images/brickwall.png); background-repeat:repeat;
-	}
+		body {
+			padding-top: 40px;
+			/* 60px to make the container go all the way to the bottom of the topbar */
+			background-image:url(css/images/brickwall.png); background-repeat:repeat;
+		}
+
+		.green {
+			font-weight:bold;
+		}
+
 	</style>
 </head>
 
 <body>
 
 	<div id="wrap">
-		<div class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
+		<div class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation" data-toggle="tab">
 			<div class="container">
 				<div class="span10">
 					<div class="navbar-header">
@@ -34,31 +41,20 @@
 						<ul class="nav navbar-nav">
 							<li class="active"><a href="#">Home</a></li>
 							<li><a href="#about">Bookmarks</a></li>
-							<li><a href="#contact">Media</a></li>
+							<li><a href="media.html">Media</a></li>
 						</ul>
 					</div><!--/.nav-collapse -->
-				</div>
-
-				<div class="span2">
-					<div id="contactFormContainer">
-						<div id="contactForm">
-							<div class="fbtable">
-								<div class="controls">
-									<br/><center><a class="btn btn-large btn-info" href="auth/google">Sign in With Google</a></center>
-								</div>
-							</div>
-						</div>
-						<div id="contactLink"></div>
-					</div>
 				</div>
 			</div>
 		</div>
 		<!-- Begin page content -->
 		<div class="container">
 			<div class="page-header">
-				<h1>Pls2Login :) Else, enjoy watching the stats and videos here.</h1>
+				<h1>Files listing</h1>
 			</div>
+			
 		</div>
+
 	</div>
 
 	<div id="footer">
@@ -75,9 +71,29 @@
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
     <script src="js/jquery.cluetip.min.js"></script>
+    <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf-8" language="javascript" src="js/DT_bootstrap.js"></script>
     <script type="text/javascript">
 
     	$(document).ready(function() {
+    		$.getJSON( "/api/v1/list", function( data ) {
+    			$.each( data, function( key, val ) {
+    				var retval;
+    				if(val.size) {
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>',val.size,val.lastmodified]);
+    				}
+    				else {
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
+    				}
+    				console.log(val.editable);
+    				if(val.editable==true) {
+    					var nTr = $('#files').dataTable().fnSettings().aoData[ retval[0] ].nTr;
+    					nTr.className = "green";
+    				}
+    			});
+    			
+    		});
+    		
     		$("#contactLink").click(function() {
     			if ($("#contactForm").is(":hidden")) {
     				$("#contactForm").slideDown("slow");
@@ -92,6 +108,7 @@
     			'$("#messageSent").hide();$("#contactForm").slideUp("slow")',
     			2000);
     	}
+    	
     </script>
 </script>
 </body>
