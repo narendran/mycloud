@@ -69,8 +69,6 @@ app.use(express.bodyParser())
     }))
    .use(everyauth.middleware());
 
-DRIVE_AUTH_TOKEN_RADHE = 'ya29.1.AADtN_W1Ia2MH3qom4KYLBjKurH4yoCidEYbay8INoJnD_DIgIhk_jZbRLf5F5OIvOH-Kw'
-
 function convertFromGoogleFile(file) {
   return {
     'filename': file.title,
@@ -82,7 +80,7 @@ function convertFromGoogleFile(file) {
 function getGoogleAuth(request) {
   var auth=  new googleapis.OAuth2Client();
     auth.setCredentials({
-      access_token: request.google_access_token  // This is fetched from user.
+      access_token: request.user.gdrive_access_token  // This is fetched from user.
     });
   return auth;
 };
