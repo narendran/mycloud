@@ -2,30 +2,37 @@ var config = require('./config');
 var everyauth = require('everyauth');
 var googleapis = require('googleapis')
 
-var UserModel = config.mongoose.model('User', require('./User'));
+var User = config.mongoose.model('User', require('./User'));
 
 var AuthGoogle = {};
 
 AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
   console.log(googleMetadata);
-  UserModel.find({'id': googleMetadata.id}, function(err, users) {
+  User.find({'id': googleMetadata.id}, function(err, users) {
     if(err) throw err;
+    var user;
     if(users.length > 0) {
-       promise.fulfill(users[0]);
+       // We're overwriting user object here to get reflect new auth tokens.
+       user = users[0];
      } else {
-       var user = new UserModel();
-       user.id = googleMetadata.id;
-       user.given_name = googleMetadata.given_name;
-       user.family_name = googleMetadata.family_name;
-       user.picture = googleMetadata.picture;
-       user.gdrive_access_token = googleMetadata.id_token;
-       user.gdrive_refresh_token = googleMetadata.refresh_token;
-       user.gdrive_access_token_expiry = googleMetadata.access_token_expiry;
-       user.save(function(err) {
-         if(err) throw err;
-         promise.fulfill(user);
-       });
+       user = new User();
      }
+
+     user.id = googleMetadata.id;
+     user.given_name = googleMetadata.given_name;
+     user.family_name = googleMetadata.family_name;
+     user.picture = googleMetadata.picture;
+     if (! user.google) {
+       user.google = {};
+     }
+     user.google.access_token = googleMetadata.id_token;
+     user.google.refresh_token = googleMetadata.refresh_token;
+     user.google.access_token_expiry = googleMetadata.access_token_expiry;
+
+     user.save(function(err) {
+       if(err) throw err;
+       promise.fulfill(user);
+     });
   });
 };
 
@@ -43,7 +50,11 @@ everyauth.google
     console.log('User Metadata:', googleUserMetadata);
     googleUserMetadata.id_token = accessToken;
     googleUserMetadata.refresh_token = accessTokenExtra['refreshToken'];
-    googleUserMetadata.access_token_expiry = new Date() + accessTokenExtra['expires_in'];
+
+    // Get current timestamp in millis - new Date().getTime()
+    // Add expires_in seconds to it
+    // Convert back to a Date object
+    googleUserMetadata.access_token_expiry = new Date((new Date()).getTime() + 1000 * accessTokenExtra['expires_in']);
     console.log("User data returned from Google: ", googleUserMetadata);
     var promise = this.Promise();
     AuthGoogle.findOrCreateUserByGoogleData(googleUserMetadata, promise);
@@ -69,7 +80,7 @@ AuthGoogle.getGoogleAuth = function(request) {
 
   var auth = new googleapis.OAuth2Client();
     auth.setCredentials({
-      access_token: request.user.gdrive_access_token  // This is fetched from user.
+      access_token: request.user.google.access_token  // This is fetched from user.
   });
   return auth;
 };
