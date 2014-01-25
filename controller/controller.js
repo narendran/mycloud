@@ -43,42 +43,33 @@ app.configure(function(){
   }));
 });
 
-app.get(API_ROOT + '/list', function (request, response) {
+
+app.get(API_ROOT + '/list/:mimeType', function (request, response) {
   console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
-  var json_response = new Array();
-  // Should get auth token here.
-  // Get authtoken from all services.
-  var auth = AuthGoogle.getGoogleAuth(request);
 
-  // TODO: This auth check should likely happen earlier.
-  if (! auth) {
+  console.log('User', request.user);
+  if (! request.user) {
     response.end(JSON.stringify({'error': 'Not logged in'}));
     return;
   }
 
-  console.log("Before making call");
-  console.log(new Date());
-  googleapis.discover('drive', 'v2').execute(function(err, client) {
-    client
-        .drive.files.list({'maxResults': '20'})
-        .withAuthClient(auth)
-        .execute(function(err, result) {
-          if (err) {
-            console.error('Error while fetching file list: ', err, 'with result', result);
-          }
-          for (var i=0; i<result.items.length; i++) {
-            console.log('error:', err, 'inserted:', result.items[i]['title']);
-            json_response.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
-          }
-          console.log("After finishing call");
-          console.log(new Date());
-          response.end(JSON.stringify(json_response));
-        });
-  console.log("After making call");
-  console.log(new Date());
-  });
-  
+  var consolidatedList = {
+    fileList: [],
+    // 1 => Number of callbacks to wait for before publishing responses.
+    // Right now, we only wait for a Google drive response.
+    counter: 1
+  };
+
+  var callback = function() {
+    console.log('Waiting for', consolidatedList.counter, 'more responses from backends.');
+    if (consolidatedList.counter <= 0) {
+      response.end(JSON.stringify(consolidatedList.fileList));
+    }
+  };
+
+  AuthGoogle.listfiles(request, consolidatedList, callback);
+
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
