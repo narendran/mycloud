@@ -5,55 +5,11 @@ var MongoStore = require('connect-mongo')(express);
 
 var everyauth = require('everyauth');
 var config = require('./config');
+var AuthGoogle = require('./AuthGoogle');
 
 var UserModel = config.mongoose.model('User', require('./User'));
 
 var API_ROOT = '/api/v1';
-var findOrCreateUserByGoogleData = function(googleMetadata, promise) {
-  console.log(googleMetadata);
-  UserModel.find({'id': googleMetadata.id}, function(err, users) {
-    if(err) throw err;
-    if(users.length > 0) {
-       promise.fulfill(users[0]);
-     } else {
-       var user = new UserModel();
-       user.id = googleMetadata.id;
-       user.given_name = googleMetadata.given_name;
-       user.family_name = googleMetadata.family_name;
-       user.picture = googleMetadata.picture;
-       user.gdrive_access_token = googleMetadata.id_token;
-       user.gdrive_refresh_token = googleMetadata.refresh_token;
-       user.gdrive_access_token_expiry = googleMetadata.access_token_expiry;
-       user.save(function(err) {
-         if(err) throw err;
-         promise.fulfill(user);
-       });
-     }
-  });
-};
-
-everyauth.google
-  .entryPath('/auth/google')
-  .callbackPath('/auth/google/callback')
-  .appId(config.google.appId)
-  .appSecret(config.google.appSecret)
-  .scope('https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly.metadata https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile')
-  .authQueryParam({access_type:'offline', approval_prompt:'auto'})
-  .findOrCreateUser(function (session, accessToken, accessTokenExtra, googleUserMetadata) {
-    console.log('Session:', session);
-    console.log('Access Token:', accessToken);
-    console.log('Access Token Extra:', accessTokenExtra);
-    console.log('User Metadata:', googleUserMetadata);
-    googleUserMetadata.id_token = accessToken;
-    googleUserMetadata.refresh_token = accessTokenExtra['refreshToken'];
-    googleUserMetadata.access_token_expiry = new Date() + accessTokenExtra['expires_in'];
-    console.log("User data returned from Google: ", googleUserMetadata);
-    var promise = this.Promise();
-    findOrCreateUserByGoogleData(googleUserMetadata, promise);
-    return promise;
-  })
-  .myHostname(config.hostName)
-  .redirectPath('/');
 
 everyauth.everymodule.findUserById(function(userId, callback) {
     UserModel.find({'id': userId}, function(err, users) {
@@ -72,35 +28,6 @@ app.use(express.bodyParser())
       store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
     }))
    .use(everyauth.middleware());
-
-function convertFromGoogleFile(file) {
-  return {
-    'filename': file.title,
-    'size': file.fileSize,
-    'lastmodified': file.modifiedDate,
-    'url': file.alternateLink,
-    'editable': file.editable
-  }
-}
-
-function getGoogleAuth(request) {
-  var auth=  new googleapis.OAuth2Client();
-    auth.setCredentials({
-      access_token: request.user.gdrive_access_token  // This is fetched from user.
-    });
-  return auth;
-};
-
-/*  // Used for debugging
-googleapis.discover('drive', 'v2').execute(function(err, client) {
-    var auth = getGoogleAuth(null)
-    client
-        .drive.files.list({'maxResults': '1'})
-        .withAuthClient(auth)
-        .execute(function(err, result) {
-            console.log('error:', err, 'inserted:', result)
-        });
-});/**/
 
 app.engine('.html', require('ejs').__express);
 app.set('views', __dirname + '/webui');
@@ -122,7 +49,14 @@ app.get(API_ROOT + '/list', function (request, response) {
   var json_response = new Array();
   // Should get auth token here.
   // Get authtoken from all services.
-  var auth = getGoogleAuth(request);
+  var auth = AuthGoogle.getGoogleAuth(request);
+
+  // TODO: This auth check should likely happen earlier.
+  if (! auth) {
+    response.end(JSON.stringify({'error': 'Not logged in'}));
+    return;
+  }
+
   console.log("Before making call");
   console.log(new Date());
   googleapis.discover('drive', 'v2').execute(function(err, client) {
@@ -135,7 +69,7 @@ app.get(API_ROOT + '/list', function (request, response) {
           }
           for (var i=0; i<result.items.length; i++) {
             console.log('error:', err, 'inserted:', result.items[i]['title']);
-            json_response.push(convertFromGoogleFile(result.items[i]))
+            json_response.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
           }
           console.log("After finishing call");
           console.log(new Date());
@@ -145,7 +79,6 @@ app.get(API_ROOT + '/list', function (request, response) {
   console.log(new Date());
   });
   
-  //response.writeHead(200, json_response);
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
