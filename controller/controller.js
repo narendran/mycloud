@@ -14,9 +14,7 @@ app.configure(function(){
 
 app.get(API_ROOT + '/list', function (request, response) {
   response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify(
-    [{'filename': 'cat.jpg', 'size': '2000','lastmodified':'somedate','url':'http://drive.google.com/sdfsdf','shared':'True','editable':'False'}
-    , {'filename': 'dog.jpg', 'size': '1000','lastmodified':'someotherdate','url':'http://dropbox.com/ef44','shared':'False','editable':'False'}]));
+  response.end(JSON.stringify({'status': 'TODO: Read'}));
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
