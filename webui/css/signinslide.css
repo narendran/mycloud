@@ -1,0 +1,28 @@
+@CHARSET "UTF-8";
+
+#contactFormContainer {
+	z-index : 1;
+	position: absolute;
+	right: 0px;
+	float: right;
+}
+
+#contactForm {
+	height: 280px;
+	width: 300px;
+	background-color: white;
+	display: none;
+}
+
+#contactLink {
+	height: 40px;
+	width: 300px;
+	background-image: url('images/login.png');
+	display: block;
+	cursor: pointer;
+}
+
+#messageSent {
+	color: #ff9933;
+	display: none;
+}
