@@ -69,7 +69,6 @@ app.get(API_ROOT + '/list/:mimeType', function (request, response) {
   };
 
   AuthGoogle.listfiles(request, consolidatedList, callback);
-
 });
 
 app.get(API_ROOT + '/read', function (request, response) {
@@ -100,6 +99,36 @@ app.get(API_ROOT + '/delete', function (request, response) {
 app.get(API_ROOT + '/update', function (request, response) {
   response.writeHead(200, {'Content-Type' : 'application/json'});
   response.end(JSON.stringify({'status': 'TODO: Update'}));
+});
+
+app.get(API_ROOT + '/info', function(request, response) {
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+
+  console.log('User', request.user);
+  if (! request.user) {
+    response.end(JSON.stringify({'error': 'Not logged in'}));
+    return;
+  }
+
+  var consolidatedInfo = {
+    info: {
+      free_bytes: 0,
+      used_bytes: 0,
+      total_bytes: 0
+    },
+    // 1 => Number of callbacks to wait for before publishing responses.
+    // Right now, we only wait for a Google drive response.
+    counter: 1
+  };
+
+  var callback = function() {
+    console.log('Waiting for', consolidatedInfo.counter, 'more responses from backends.');
+    if (consolidatedInfo.counter <= 0) {
+      response.end(JSON.stringify(consolidatedInfo.info));
+    }
+  };
+
+  AuthGoogle.getinfo(request, consolidatedInfo, callback);
 });
 
 app.get("/media.html", function (req, res) {
