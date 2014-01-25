@@ -107,7 +107,7 @@
 							<th>Last Modified</th>
 						</tr>
 					</thead>
-					<tbody id="file_listing">
+					<tbody>
 						
 					</tbody>
 				</table>
@@ -132,19 +132,15 @@
     <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
     <script src="js/jquery.cluetip.min.js"></script>
     <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
-    <script type="text/javascript" charset="utf-8" language="javascript" src="DT_bootstrap.js"></script>
+    <script type="text/javascript" charset="utf-8" language="javascript" src="js/DT_bootstrap.js"></script>
     <script type="text/javascript">
-    	$.extend( $.fn.dataTableExt.oStdClasses, {
-    		"sWrapper": "dataTables_wrapper form-inline"
-    	} );
 
     	$(document).ready(function() {
     		$.getJSON( "/api/v1/list", function( data ) {
-    			var items = "";
     			$.each( data, function( key, val ) {
-    				items = items +  "<tr><td>"+val.filename+"</td><td>"+val.size+"</td><td>"+val.lastmodified+"</td></tr>";
+    				$('#files').dataTable().fnAddData([val.filename,val.size,val.lastmodified]);
     			});
-    			$('#file_listing').html(items.toString());
+    			
     		});
     		$('#files').dataTable();
     		$("#contactLink").click(function() {
