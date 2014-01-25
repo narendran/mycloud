@@ -1,8 +1,33 @@
 var express = require('express');
+var googleapis = require('googleapis')
 var app = express();
 
 var API_ROOT = '/api/v1';
 var PORT = 5000;
+
+DRIVE_AUTH_TOKEN_RADHE = 'ya29.1.AADtN_VHxYiorzy8NhToWQ0wIJsSL-oCkARdiotlfJShbzDA7pgb6tkf6cklYPVaBQwymg'
+
+
+
+function getGoogleAuth(request) {
+  var auth=  new googleapis.OAuth2Client();
+    auth.setCredentials({
+      access_token: DRIVE_AUTH_TOKEN_RADHE  // Fetch from DB for the user.
+    });
+  return auth;
+};
+
+googleapis.discover('drive', 'v2').execute(function(err, client) {
+    var auth = getGoogleAuth(null)
+    client
+        .drive.files.list({'maxResults': '1'})
+        .withAuthClient(auth)
+        .execute(function(err, result) {
+            console.log('error:', err, 'inserted:', result)
+        });
+});
+
+
 
 app.configure(function(){
   app.use(express.static(__dirname + '/webui'));
@@ -13,7 +38,26 @@ app.configure(function(){
 });
 
 app.get(API_ROOT + '/list', function (request, response) {
-  response.writeHead(200, {'Content-Type' : 'application/json'});
+  response.writeHead(200, {});
+  var json_response = {
+    'Content-Type' : 'application/json',
+    'items':[]
+  };
+  // Should get auth token here.
+  // Get authtoken from all services.
+  var auth = getGoogleAuth(request);
+  googleapis.discover('drive', 'v2').execute(function(err, client) {
+    client
+        .drive.files.list({'maxResults': '1'})
+        .withAuthClient(auth)
+        .execute(function(err, result) {
+          for (var i=0; i<result.items.length; i++) {
+            console.log('error:', err, 'inserted:', result.items[i]['title'])
+            json_repsonse.items.append({'title':result.items[i]['title']})
+          }
+        });
+  });
+  response.writeHead(200, json_response);
   response.end(JSON.stringify({'status': 'TODO: List'}));
 });
 
