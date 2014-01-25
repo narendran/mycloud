@@ -22,6 +22,8 @@ var findOrCreateUserByGoogleData = function(googleMetadata, promise) {
        user.family_name = googleMetadata.family_name;
        user.picture = googleMetadata.picture;
        user.gdrive_access_token = googleMetadata.id_token;
+       user.gdrive_refresh_token = googleMetadata.refresh_token;
+       user.gdrive_access_token_expiry = new Date();
        user.save(function(err) {
          if(err) throw err;
          promise.fulfill(user);
@@ -36,13 +38,14 @@ everyauth.google
   .appId(config.google.appId)
   .appSecret(config.google.appSecret)
   .scope('https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly.metadata https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile')
-  .authQueryParam({access_type:'online', approval_prompt:'auto'})
+  .authQueryParam({access_type:'offline', approval_prompt:'auto'})
   .findOrCreateUser(function (session, accessToken, accessTokenExtra, googleUserMetadata) {
     console.log('Session:', session);
     console.log('Access Token:', accessToken);
     console.log('Access Token Extra:', accessTokenExtra);
     console.log('User Metadata:', googleUserMetadata);
     googleUserMetadata.id_token = accessToken;
+    googleUserMetadata.refresh_token = session['cookie']['auth']['google']['refreshToken'];
     console.log("User data returned from Google: ", googleUserMetadata);
     var promise = this.Promise();
     findOrCreateUserByGoogleData(googleUserMetadata, promise);
@@ -128,6 +131,9 @@ app.get(API_ROOT + '/list', function (request, response) {
         .drive.files.list({'maxResults': '20'})
         .withAuthClient(auth)
         .execute(function(err, result) {
+          if (err) {
+            console.error('Error while fetching file list: ', err, 'with result', result);
+          }
           for (var i=0; i<result.items.length; i++) {
             console.log('error:', err, 'inserted:', result.items[i]['title']);
             json_response.push(convertFromGoogleFile(result.items[i]))
