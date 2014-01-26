@@ -1,19 +1,23 @@
+import argparse
 import llfuse
+
+from rpc import GoogleDriveLogin
 
 class MyCloudOperations(llfuse.Operations):
   def __init__(self):
     super(MyCloudOperations, self).__init__()
+    self.gdl = GoogleDriveLogin()
 
   def statfs(self):
+    self.gdl.authenticate()
     stat_ = llfuse.StatvfsData()
 
     free_bytes = 0
     total_bytes = 0
 
-    for endpoint in EndPoint.get_all_endpoints():
-      info = endpoint.get_info()
-      free_bytes += info['freeBytes']
-      total_bytes += info['totalBytes']
+    info = self.gdl.get_info()
+    free_bytes += info['freeBytes']
+    total_bytes += info['totalBytes']
 
     stat_.f_bsize = 512
     stat_.f_frsize = 512
@@ -27,3 +31,19 @@ class MyCloudOperations(llfuse.Operations):
 
     return stat_
 
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(prog='MyCloud')
+    parser.add_argument('mountpoint', help='Root directory of mounted CloudFS')
+    args = parser.parse_args()
+
+    operations = MyCloudOperations()
+    llfuse.init(operations, args.mountpoint, [ b'fsname=CloudFS' ])
+    
+    try:
+        llfuse.main(single=False)
+    except:
+        llfuse.close(unmount=False)
+        raise
+
+    llfuse.close()
