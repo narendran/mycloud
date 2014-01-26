@@ -180,6 +180,7 @@ app.get(API_ROOT + '/search', function (request, response) {
 app.get(API_ROOT + '/delete/:fileid', function (request, response) {
   console.log("FILE ID : "+request.params.fileid);
   var auth = AuthGoogle.getGoogleAuth(request);
+  
   googleapis.discover('drive', 'v2').execute(function(err, client) {
     client
     .drive.files.delete({'fileId':request.params.fileid.toString()})
