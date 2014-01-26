@@ -305,9 +305,27 @@ app.get(API_ROOT + '/share', function (request, response) {
 
 
 
+app.get(API_ROOT + '/dropdelete', function (request, response) {
+  var path = request.param("path")
+  console.log("FILE ID : "+request.params.fileid);
+    everyauth.dropbox.oauth.delete(
+      AuthDropbox.ApiBaseUrl + 'fileops/delete?root=dropbox&path=' + path,
+      request.user.dropbox.access_token,
+      request.user.dropbox.access_secret,
+      function (err, res) {
+        console.log(" ID : "+path);
+        if (err) {
+          console.log('Error while deleting file: ', path, 'with result', res, 'and error', err);
+          failureResponse(result);
+        } else {
+          successResponse(result);
+        }
+      });
+  }
+});
+
+
 app.get(API_ROOT + '/delete/:fileid', function (request, response) {
-  if (!request.params.fileid.startswith('/')) {
-  
   console.log("FILE ID : "+request.params.fileid);
   var auth = AuthGoogle.getGoogleAuth(request);
   
@@ -324,22 +342,6 @@ app.get(API_ROOT + '/delete/:fileid', function (request, response) {
       }
     });
   });
-  } else {
-  console.log("FILE ID : "+request.params.fileid);
-    everyauth.dropbox.oauth.delete(
-      AuthDropbox.ApiBaseUrl + 'fileops/delete?root=dropbox&path=' + request.params.fileid,
-      request.user.dropbox.access_token,
-      request.user.dropbox.access_secret,
-      function (err, res) {
-        console.log("FILasfdfsdE ID : "+request.params.fileid);
-        if (err) {
-          console.log('Error while deleting file: ', path, 'with result', res);
-          failureResponse(result);
-        } else {
-          successResponse(result);
-        }
-      });
-  }
 });
 
 function successResponse(result) {

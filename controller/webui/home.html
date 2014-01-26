@@ -149,7 +149,7 @@ function deleteFile(obj){
 					$("#"+obj['id']).hide();
 				});
 			} else { // Must be dropbox.
-				$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
+				$.getJSON( "/api/v1/dropdelete?path="+obj['id'], function( data ) {
 					console.log(data);
 					$("#"+obj['id']).hide();
 				});
