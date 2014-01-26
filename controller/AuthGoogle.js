@@ -18,8 +18,7 @@ AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
        user = new User();
      }
 
-     user.given_name = googleMetadata.given_name;
-     user.family_name = googleMetadata.family_name;
+     user.display_name = googleMetadata.name;
      user.picture = googleMetadata.picture;
      if (! user.google) {
        user.google = {};
@@ -44,10 +43,10 @@ everyauth.google
   .scope('https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile')
   .authQueryParam({access_type:'offline', approval_prompt:'auto'})
   .findOrCreateUser(function (session, accessToken, accessTokenExtra, googleUserMetadata) {
-    console.log('Session:', session);
-    console.log('Access Token:', accessToken);
-    console.log('Access Token Extra:', accessTokenExtra);
-    console.log('User Metadata:', googleUserMetadata);
+    //console.log('Session:', session);
+    //console.log('Access Token:', accessToken);
+    //console.log('Access Token Extra:', accessTokenExtra);
+    //console.log('User Metadata:', googleUserMetadata);
     googleUserMetadata.id_token = accessToken;
     googleUserMetadata.refresh_token = accessTokenExtra['refreshToken'];
 
@@ -55,7 +54,7 @@ everyauth.google
     // Add expires_in seconds to it
     // Convert back to a Date object
     googleUserMetadata.access_token_expiry = new Date((new Date()).getTime() + 1000 * accessTokenExtra['expires_in']);
-    console.log("User data returned from Google: ", googleUserMetadata);
+    //console.log("User data returned from Google: ", googleUserMetadata);
     var promise = this.Promise();
     AuthGoogle.findOrCreateUserByGoogleData(googleUserMetadata, promise);
     return promise;
