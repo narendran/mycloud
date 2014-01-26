@@ -5,34 +5,57 @@ var MongoStore = require('connect-mongo')(express);
 var everyauth = require('everyauth');
 var config = require('./config');
 
-var dbox = require("dbox");
-var dropbox   = dbox.app({ "app_key": "n7ick3jdpi3o9dd", "app_secret": "8n3dkgkkwq8g50v" })
-
-
+var Dropbox = require("dropbox");
 
 var UserModel = config.mongoose.model('User', require('./User'));
 
 var API_ROOT = '/api/v1';
 
-
-app.use(express.bodyParser())
-   .use(express.logger())
-   .use(express.cookieParser('miketesting'))
-   .use(express.session({
-      secret: 'FxT10477A93d54HJx5',
-      store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
-    }))
-   .use(everyauth.middleware());
+var client = new Dropbox.Client({
+    key: "n7ick3jdpi3o9dd",
+    secret: "8n3dkgkkwq8g50v"
+});
 
 
 
+var AuthDropbox = {};
 
-var everyauth = require('everyauth');
-var config = require('./config');
+AuthDropbox.findOrCreateUserByDropboxData = function(dbox_user, promise) {
+  console.log(dbox_user);
+  User.find({'dropbox.id': dbox_user.id}, function(err, users) {
+    if(err) throw err;
+    var user;
+    if(users.length > 0) {
+       // We're overwriting user object here to get reflect new auth tokens.
+       user = users[0];
+     } else {
+       user = new User();
+     }
 
-var UserModel = config.mongoose.model('User', require('./User'));
+     user.dropbox.id = dbox_user.id;
+     user.dropbox.display_name = dbox_user.display_name;
+     user.dropbox.access_token = dbox_user.access_token;
+     user.dropbox.access_secret = dbox_user.access_secret;
+     user.dropbox.access_token_expiry = db_data.access_token_expiry;
 
-var API_ROOT = '/api/v1';
+     user.save(function(err) {
+       if(err) throw err;
+       promise.fulfill(user);
+     });
+  });
+};
+
+
+
+
+everyauth.everymodule.findUserById(function(userId, callback) {
+    UserModel.find({'dropbox.id': userId}, function(err, users) {
+      if(err) throw err;
+      callback(null, users[0]);
+    });
+  });
+
+
 
 app.engine('.html', require('ejs').__express);
 app.set('views', __dirname + '/webui');
@@ -49,30 +72,6 @@ app.configure(function(){
   }));
 });
 
-var app = express();
-
-app.use(express.bodyParser())
-   .use(express.logger())
-   .use(express.cookieParser('miketesting'))
-   .use(express.session({
-      secret: 'FxT10477A93d54HJx5',
-      store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
-    }))
-   .use(everyauth.middleware());
-
-app.engine('.html', require('ejs').__express);
-app.set('views', __dirname + '/webui');
-app.get("/", function handler (req, res) {
-  res.render('home.html');
-});
-
-app.configure(function(){
-  app.use(express.static(__dirname + '/webui'));
-  app.use(express.errorHandler({
-    dumpExceptions: true,
-    showStack: true
-  }));
-});
 
 
 function requestToken(res) {
@@ -87,11 +86,12 @@ function requestToken(res) {
         res.end();
     });
 }
+/*
 //user visits url to grant authorization to client
 app.get(/\/authorized/, function(req, res) {
     // callback from dropbox authorization
     accessToken(req, res);
-});
+});/**/
 
 //now generate access tokens from the request token
 function accessToken(req, res) {
@@ -119,24 +119,59 @@ function accessToken(req, res) {
 }
 
 
-var everyauth = require('everyauth');
-
 everyauth.dropbox
   .entryPath('/auth/dropbox')
-  .consumerKey('n7ick3jdpi3o9dd')
-  .consumerSecret('8n3dkgkkwq8g50v')
+  .callbackPath('/auth/dropbox/callback')
+  .consumerKey(config.dropbox.key)
+  .consumerSecret(config.dropbox.secret)
   .findOrCreateUser( function (sess, accessToken, accessSecret, user) {
-    console.log('Session:', session);
+    console.log("HFSH");
+    console.log('Session:', sess);
     console.log('Access Token:', accessToken);
-    console.log('Access Token Extra:', accessTokenExtra);
-    console.log('User Metadata:', googleUserMetadata);
-    //googleUserMetadata.id_token = accessToken;
-    //console.log("User data returned from Google: ", googleUserMetadata);
+    console.log('Access Secret:', accessSecret);
+    console.log('User:', user);
+
+    user.access_token = accessToken;
+    user.access_secret = accessSecret;
     var promise = this.Promise();
+    AuthDropbox.findOrCreateUserByDropboxData(user, promise);
+    return promise;
     })
+  .myHostname(config.hostName)
   .redirectPath('/');
 
-console.log('this is printed');
+
+
+
+
+var app = express();
+
+app.use(express.bodyParser())
+   .use(express.logger())
+   .use(express.cookieParser('miketesting'))
+   .use(express.session({
+      secret: 'FxT10477A93d54HJx5',
+      store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
+    }))
+   .use(everyauth.middleware());
+
+app.engine('.html', require('ejs').__express);
+app.set('views', __dirname + '/webui');
+app.get("/", function handler (req, res) {
+  res.render('home.html');
+});
+
+app.configure(function(){
+  app.use(express.static(__dirname + '/webui'));
+  app.use(express.errorHandler({
+    dumpExceptions: true,
+    showStack: true
+  }));
+});
+
+
+
+
 
 
 

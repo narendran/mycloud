@@ -4,6 +4,10 @@ var Config = {
     appId: process.env.GOOGLE_CLIENT_ID || process.argv[4] || '690836899812-e5443de0msu371k6a7mhfl3hgdlr5fj1.apps.googleusercontent.com',
     appSecret: process.env.GOOGLE_APP_SECRET || process.argv[5] || '7BFDEW_CK-NtILzdjiAemkzd'
   },
+  dropbox: {
+    key: 'n7ick3jdpi3o9dd',
+    secret: '8n3dkgkkwq8g50v'
+  },
   hostName: process.env.HOST_NAME || process.argv[3] || '',
   port: process.env.PORT || 5000,
   mongo_url: "mongodb://localhost/mycloud",
