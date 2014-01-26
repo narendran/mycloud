@@ -41,7 +41,7 @@ everyauth.google
   .callbackPath('/auth/google/callback')
   .appId(config.google.appId)
   .appSecret(config.google.appSecret)
-  .scope('https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly.metadata https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile')
+  .scope('https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile')
   .authQueryParam({access_type:'offline', approval_prompt:'auto'})
   .findOrCreateUser(function (session, accessToken, accessTokenExtra, googleUserMetadata) {
     console.log('Session:', session);
