@@ -1,6 +1,10 @@
 var config = require('./config');
 var everyauth = require('everyauth');
 var googleapis = require('googleapis')
+var express = require('express');
+var MongoStore = require('connect-mongo')(express);
+
+var cookiestore = new MongoStore({mongoose_connection: config.mongoose.connections[0]});
 
 var User = config.mongoose.model('User', require('./User'));
 
@@ -107,7 +111,12 @@ AuthGoogle.getGoogleAuth = function(request, callback) {
   return auth;
 };
 
-AuthGoogle.getUserInfo = function(key, response) {
+AuthGoogle.getUserInfo = function(request, response) {
+  AuthGoogle.getInfo();
+  return;
+  var key = request.query.access_token;
+  var session = request.session;
+  console.log(session);
   googleapis.discover('oauth2', 'v1').execute(
     function(err, client) {
       client.oauth2.tokeninfo({
@@ -116,6 +125,7 @@ AuthGoogle.getUserInfo = function(key, response) {
       .execute(function(err, result) {
         console.log('Token info', result);
         if (err || !result || result['expires_in'] <= 0) {
+          response.writeHead(200, {'Content-Type' : 'application/json'});
           response.end(JSON.stringify({'error': 'Not logged in'}));
           return;
         }
@@ -123,7 +133,24 @@ AuthGoogle.getUserInfo = function(key, response) {
         // Ok, this guy has a valid key. See if he has an "account" with us.
         User.find({'google.id': result['user_id']},
           function(err, users) {
-            console.log('Users', users);
+            if (err || !users || users.length <= 0) {
+              response.writeHead(200, {'Content-Type' : 'application/json'});
+              response.end(JSON.stringify({'error': 'Not registered'}));
+              return;
+            }
+            console.log('Users', users[0]);
+            // session.auth = users[0];
+
+            console.log('Current User', request.user);
+            console.log('Response', response.locals.everyauth);
+            response.locals.everyauth.loggedIn = true;
+            response.locals.everyauth.user = users[0];
+            session.auth = users[0];
+            // response.loggedIn = true;
+
+            console.log('Current User updated', session);
+            response.writeHead(200, {'Content-Type' : 'application/json'});
+            response.end(JSON.stringify({'success': 'Logged in'}));
           }
         );
       });
