@@ -1,23 +1,51 @@
 var config = require('./config');
 var everyauth = require('everyauth');
 var googleapis = require('googleapis')
+var express = require('express');
+var MongoStore = require('connect-mongo')(express);
+
+var cookiestore = new MongoStore({mongoose_connection: config.mongoose.connections[0]});
 
 var User = config.mongoose.model('User', require('./User'));
 
 var AuthGoogle = {};
 
-AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
+AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise, session) {
   console.log(googleMetadata);
   User.find({'google.id': googleMetadata.id}, function(err, users) {
     if(err) throw err;
     var user;
+    
     if(users.length > 0) {
        // We're overwriting user object here to get reflect new auth tokens.
        user = users[0];
+       AuthGoogle.fillGoogleDataForUser(user, googleMetadata, promise);
      } else {
-       user = new User();
+       if (session && session.auth && session.auth.userId) {
+         // There must be a dropbox entry for this user. Create a google entry for this user.
+         User.find({'_id': session.auth.userId}, function(err, users2) {
+           if(err) throw err;
+           var user2;
+           if(users2.length > 0) {
+             // We're overwriting user object here to get reflect new auth tokens.
+             user2 = users2[0];
+           } else {
+             // Session data was bad.
+             user2 = new User();
+           }
+         AuthGoogle.fillGoogleDataForUser(user2, googleMetadata, promise);
+         });
+       } else {
+         user = new User();
+         AuthGoogle.fillGoogleDataForUser(user, googleMetadata, promise);
+       }
      }
+  });
+};
 
+
+AuthGoogle.fillGoogleDataForUser = function(user, googleMetadata, promise) {
+     console.log("okay,", user);
      user.display_name = googleMetadata.name;
      user.picture = googleMetadata.picture;
      if (! user.google) {
@@ -32,8 +60,8 @@ AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
        if(err) throw err;
        promise.fulfill(user);
      });
-  });
-};
+ }
+
 
 everyauth.google
   .entryPath('/auth/google')
@@ -56,7 +84,7 @@ everyauth.google
     googleUserMetadata.access_token_expiry = new Date((new Date()).getTime() + 1000 * accessTokenExtra['expires_in']);
     //console.log("User data returned from Google: ", googleUserMetadata);
     var promise = this.Promise();
-    AuthGoogle.findOrCreateUserByGoogleData(googleUserMetadata, promise);
+    AuthGoogle.findOrCreateUserByGoogleData(googleUserMetadata, promise, session);
     return promise;
   })
   .myHostname(config.hostName)
@@ -75,13 +103,60 @@ AuthGoogle.convertFromGoogleFile = function(file) {
   }
 }
 
-AuthGoogle.getGoogleAuth = function(request) {
+AuthGoogle.getGoogleAuth = function(request, callback) {
   var auth = new googleapis.OAuth2Client();
-    auth.setCredentials({
-      access_token: request.user.google.access_token  // This is fetched from user.
+  auth.setCredentials({
+    access_token: request.user.google.access_token  // This is fetched from user.
   });
   return auth;
 };
+
+AuthGoogle.getUserInfo = function(request, response) {
+  AuthGoogle.getInfo();
+  return;
+  var key = request.query.access_token;
+  var session = request.session;
+  console.log(session);
+  googleapis.discover('oauth2', 'v1').execute(
+    function(err, client) {
+      client.oauth2.tokeninfo({
+        access_token: key
+      })
+      .execute(function(err, result) {
+        console.log('Token info', result);
+        if (err || !result || result['expires_in'] <= 0) {
+          response.writeHead(200, {'Content-Type' : 'application/json'});
+          response.end(JSON.stringify({'error': 'Not logged in'}));
+          return;
+        }
+
+        // Ok, this guy has a valid key. See if he has an "account" with us.
+        User.find({'google.id': result['user_id']},
+          function(err, users) {
+            if (err || !users || users.length <= 0) {
+              response.writeHead(200, {'Content-Type' : 'application/json'});
+              response.end(JSON.stringify({'error': 'Not registered'}));
+              return;
+            }
+            console.log('Users', users[0]);
+            // session.auth = users[0];
+
+            console.log('Current User', request.user);
+            console.log('Response', response.locals.everyauth);
+            response.locals.everyauth.loggedIn = true;
+            response.locals.everyauth.user = users[0];
+            session.auth = users[0];
+            // response.loggedIn = true;
+
+            console.log('Current User updated', session);
+            response.writeHead(200, {'Content-Type' : 'application/json'});
+            response.end(JSON.stringify({'success': 'Logged in'}));
+          }
+        );
+      });
+    }
+  );
+}
 
 AuthGoogle.getinfo = function(request, consolidated, callback) {
   var auth = AuthGoogle.getGoogleAuth(request);

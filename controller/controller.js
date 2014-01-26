@@ -6,12 +6,14 @@ var MongoStore = require('connect-mongo')(express);
 var everyauth = require('everyauth');
 var config = require('./config');
 var AuthGoogle = require('./AuthGoogle');
+var AuthDropbox = require('./AuthDropbox');
 
 var UserModel = config.mongoose.model('User', require('./User'));
 
 var API_ROOT = '/api/v1';
 
 everyauth.everymodule.findUserById(function(userId, callback) {
+  console.log('FindUserByID :: ', arguments);
   UserModel.find({'_id': userId}, function(err, users) {
     if(err) throw err;
     callback(null, users[0]);
@@ -20,6 +22,35 @@ everyauth.everymodule.findUserById(function(userId, callback) {
 
 var app = express();
 
+var myfilter = function (req, res, next) {
+  console.log('Filtering..');
+  console.log(req.session);
+  if (req.user) {
+    return next();
+  }
+
+  if (! req.query.user) {
+    return next();
+  }
+
+  UserModel.find({'google.id': req.query.user},
+    function(err, users) {
+      if (err || !users || users.length <= 0) {
+        return next();
+      }
+      req.session.auth = req.user = users[0];
+      req.session.auth.loggedIn = true;
+      req.session.auth.userId = users[0]._id;
+      req.session.auth['google'].user = users[0];
+      req.user = users[0];
+      req.session.save(function () {
+        console.log('Session after lot of work!', req.session);
+        next();
+      });
+    }
+  );
+}
+
 app.use(express.bodyParser())
 .use(express.logger())
 .use(express.cookieParser('miketesting'))
@@ -27,6 +58,7 @@ app.use(express.bodyParser())
   secret: 'FxT10477A93d54HJx5',
   store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
 }))
+.use(myfilter)
 .use(everyauth.middleware());
 
 app.get("/", function (req, res) {
@@ -73,6 +105,19 @@ app.configure(function(){
   }));
 });
 
+app.get(API_ROOT + '/authme', function (request, response) {
+
+  console.log('User', request.user);
+  console.log(request.query);
+  if (request.user) {
+    // TODO: Might need to re-login
+    response.writeHead(200, {'Content-Type' : 'application/json'});
+    response.end(JSON.stringify({'error': 'Already logged in'}));
+    return;
+  } else {
+    AuthGoogle.getUserInfo(request, response);
+  }
+});
 
 app.get(API_ROOT + '/list/:mimeType', function (request, response) {
   console.log('User', request.user);
