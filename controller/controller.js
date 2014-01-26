@@ -48,7 +48,7 @@ var myfilter = function (req, res, next) {
         next();
       });
     }
-  );
+    );
 }
 
 app.use(express.bodyParser())
@@ -196,18 +196,18 @@ app.get(API_ROOT + '/search', function (request, response) {
     var query_obj= {'maxResults':10, 'q':search_query}
     console.log("query: " + JSON.stringify(query_obj))
     client
-        .drive.files.list(query_obj)
-        .withAuthClient(auth)
-        .execute(function(err, result) {
-          if (err) {
-            console.error('Error while fetching file list: ', err, 'with result', result);
-          }
-          for (var i=0; i<result.items.length; i++) {
-            console.log('error:', err, 'inserted:', result.items[i]['title']);
-            json_response.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
-          }
-          response.end(JSON.stringify(json_response));
-        });
+    .drive.files.list(query_obj)
+    .withAuthClient(auth)
+    .execute(function(err, result) {
+      if (err) {
+        console.error('Error while fetching file list: ', err, 'with result', result);
+      }
+      for (var i=0; i<result.items.length; i++) {
+        console.log('error:', err, 'inserted:', result.items[i]['title']);
+        json_response.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
+      }
+      response.end(JSON.stringify(json_response));
+    });
   });
 });
 
@@ -218,20 +218,20 @@ app.get(API_ROOT + '/read', function (request, response) {
   console.log('User', request.user);	
   var auth = AuthGoogle.getGoogleAuth(request);
   googleapis.discover('drive', 'v2').execute(function(err, client) {
-  
-	client.
-	drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
-	    .withMedia('text/plain', 'Read')
-	    .withAuthClient(auth)
-	    .execute(function(err, result) {
-	      if(err) {console.log(err)}
-	        if(result) {
-        	  console.log(result); 
-        	}
-          response.writeHead(200, {'Content-Type' : 'application/json'});
-          response.end(JSON.stringify({'status': err}));
-	});
-   });
+
+   client.
+   drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
+   .withMedia('text/plain', 'Read')
+   .withAuthClient(auth)
+   .execute(function(err, result) {
+     if(err) {console.log(err)}
+       if(result) {
+         console.log(result); 
+       }
+       response.writeHead(200, {'Content-Type' : 'application/json'});
+       response.end(JSON.stringify({'status': err}));
+     });
+ });
 });
 
 
@@ -242,16 +242,16 @@ app.get(API_ROOT + '/add', function (request, response) {
   console.log('request: ' , request);
   var auth = AuthGoogle.getGoogleAuth(request);
   googleapis.discover('drive', 'v2').execute(function(err, client) {
-  client
-      .drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
-      .withMedia('text/plain', request.params.filetext)
-      .withAuthClient(auth)
-      .execute(function(err, result) {
-        console.log('error:', err, 'inserted:', result.id)
-      });
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': err}));
-});
+    client
+    .drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
+    .withMedia('text/plain', request.params.filetext)
+    .withAuthClient(auth)
+    .execute(function(err, result) {
+      console.log('error:', err, 'inserted:', result.id)
+    });
+    response.writeHead(200, {'Content-Type' : 'application/json'});
+    response.end(JSON.stringify({'status': err}));
+  });
 });
 
 
@@ -259,24 +259,24 @@ app.get(API_ROOT + '/move', function (request, response) {
   console.log('User', request.user);	
   var auth = AuthGoogle.getGoogleAuth(request);
   googleapis.discover('drive', 'v2').execute(function(err, client) {
-  client
-      .drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
-      .withMedia('text/plain', 'File moved')
-      .withAuthClient(auth)
-      .execute(function(err, result) {
-        console.log('error:', err, 'inserted:', result.id)
+    client
+    .drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
+    .withMedia('text/plain', 'File moved')
+    .withAuthClient(auth)
+    .execute(function(err, result) {
+      console.log('error:', err, 'inserted:', result.id)
+    });
+    function insertFileIntoFolder(folderId, fileId) {
+      var body = {'id': fileId};
+      var request = gapi.client.drive.children.insert({
+        'folderId': folderId,
+        'resource': body
       });
-function insertFileIntoFolder(folderId, fileId) {
-  var body = {'id': fileId};
-  var request = gapi.client.drive.children.insert({
-    'folderId': folderId,
-    'resource': body
+      request.execute(function(resp) { });
+    }
+    response.writeHead(200, {'Content-Type' : 'application/json'});
+    response.end(JSON.stringify({'status': err}));
   });
-  request.execute(function(resp) { });
-}
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': err}));
-});
 });
 
 
@@ -285,22 +285,60 @@ app.get(API_ROOT + '/update', function (request, response) {
   console.log('User', request.user);	
   var auth = AuthGoogle.getGoogleAuth(request);
   googleapis.discover('drive', 'v2').execute(function(err, client) {
- client
-      .drive.files.update({ 'fileId': request.params.fileid})
-      .withMedia('text/plain', 'File updated with no metadata')
-      .withAuthClient(auth)
-      .execute(function(err, result) {
-        console.log('error:', err, 'updated:', result.id)
-      });
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': err}));
-});
+   client
+   .drive.files.update({ 'fileId': request.params.fileid})
+   .withMedia('text/plain', 'File updated with no metadata')
+   .withAuthClient(auth)
+   .execute(function(err, result) {
+    console.log('error:', err, 'updated:', result.id)
+  });
+   response.writeHead(200, {'Content-Type' : 'application/json'});
+   response.end(JSON.stringify({'status': err}));
+ });
 });
 
 
 app.get(API_ROOT + '/share', function (request, response) {
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': 'TODO: Update'}));
+
+  console.log('User request public sharing :'+request.user);
+  var url = require('url');
+  var url_parts = url.parse(request.url, true);
+  var query = url_parts.query;
+  console.log("Query params "+query.url);
+
+  // Mongo mapping entry and return the resulting shortURL for the end user to share
+  var newshortURL = "clo.ud/"+Math.random().toString(36).substr(2,7);
+  var ShortURL = config.mongoose.model('ShortURL', require('./ShortURL'));
+  var success = false;
+  console.log(newshortURL+" "+ShortURL+" "+success);
+  var shortSearch = ShortURL.find({'short': newshortURL}, function(err, urls) {
+      console.log(err);
+      console.log(urls.length + " entries were found in shortURL DB");
+      if(urls.length != 0) { // Existing URL
+       newshortURL = Math.random().toString(36).substr(2,7);
+       shortSearch(newshortURL);
+     } else {
+      console.log("Success in finding unique shortURL");
+       var s1 = new ShortURL();
+       s1.short = newshortURL;
+       s1.long = url_parts.query.url;
+       s1.save(function(err){
+        if(err){
+          console.log(err); 
+          success = "ShortURL generation failed due to : "+err;
+          response.writeHead(200,{'Content-Type' : 'application/json'});
+           response.end("{\"status\" : \""+success+"\"}");
+        } else {
+          console.log("ShortURL generation succeeded");
+          success = newshortURL;
+          response.writeHead(200,{'Content-Type' : 'application/json'});
+          response.end("{\"status\" : \""+success+"\"}");
+        }
+        
+      });
+     } 
+   });
+  
 });
 
 
@@ -315,19 +353,19 @@ app.get(API_ROOT + '/delete/:fileid', function (request, response) {
     .withAuthClient(auth)
     .execute(function(err, result) {
       if(err) {console.log(err)
-          response.writeHead(200, {'Content-Type' : 'application/json'});
-          response.end(JSON.stringify({'status': 'Failed'}));
-          return;
+        response.writeHead(200, {'Content-Type' : 'application/json'});
+        response.end(JSON.stringify({'status': 'Failed'}));
+        return;
       }
 
-        if(result) {
-          console.log(result);
-          response.writeHead(200, {'Content-Type' : 'application/json'});
-          response.end(JSON.stringify({'status': 'Success'}));
-          
-        }
-        
-      });
+      if(result) {
+        console.log(result);
+        response.writeHead(200, {'Content-Type' : 'application/json'});
+        response.end(JSON.stringify({'status': 'Success'}));
+
+      }
+
+    });
   });
   
 });

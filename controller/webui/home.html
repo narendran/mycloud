@@ -1,5 +1,5 @@
 
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
@@ -9,7 +9,7 @@
 	<title>My Cloud : Empowering users worldwide with data storage</title>
 	<link href="sticky-footer-navbar.css" rel="stylesheet">
 	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
-	<link href="css/signinslide.css" rel="stylesheet">
+	<link href="css/slide_css_side.css" rel="stylesheet">
 	<link href="css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet">
 	<link href="css/jquery.cluetip.css" rel="stylesheet">
 	<link href="css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
@@ -17,7 +17,7 @@
 	<link rel="stylesheet" type="text/css" href="http://bootboxjs.com/css/main.css">
 	<style type="text/css">
 		body {
-			padding-top: 40px;
+			padding-top: 50px;
 			/* 60px to make the container go all the way to the bottom of the topbar */
 			background-image:url(css/images/brickwall.png); background-repeat:repeat;
 		}
@@ -54,35 +54,46 @@
 				</div>
 			</div>
 		</div>
+		<div class="span2"> 
+			<div id="contactFormContainer">
+				<div id="contactForm">
 
+					<div class="controls">
+						<br/><center><a class="btn btn-large btn-info" href="auth/google">Sign in With Google</a>
+						<a class="btn btn-large btn-success" href="auth/dropbox">Sign in With DropBox</a></center>
+					</div>
 
-		<!-- Begin page content -->
-		<div class="container">
-			<div class="page-header">
-				<h1>Files listing</h1>
+				</div>
+				<div id="contactLink"></div>
 			</div>
-			<div>
-				<table cellpadding="0" cellspacing="0" border="0" class="table table-bordered" id="files">
-					<thead>
-						<tr>
-							<th>File name</th>
-							<th>Size</th>
-							<th>Last Modified</th>
-						</tr>
-					</thead>
-					<tbody>
-						
-					</tbody>
-				</table>
 
+			<!-- Begin page content -->
+			<div class="container">
+				<div class="page-header">
+					<h1>Files listing</h1>
+				</div>
+				<div>
+					<table cellpadding="0" cellspacing="0" border="0" class="table table-bordered" id="files">
+						<thead>
+							<tr>
+								<th>File name</th>
+								<th>Size</th>
+								<th>Last Modified</th>
+							</tr>
+						</thead>
+						<tbody>
+
+						</tbody>
+					</table>
+
+				</div>
 			</div>
+
 		</div>
 
-	</div>
+		<div id="footer">
 
-	<div id="footer">
-		
-	</div>
+		</div>
 
 
     <!-- Bootstrap core JavaScript
@@ -94,41 +105,47 @@
     <script src="js/jquery.cluetip.min.js"></script>
     <script src="js/bootbox.min.js"></script>
     <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
-    ]
+    
     <script type="text/javascript">
 
     	$(document).ready(function() {
     		$.getJSON( "/api/v1/list/all", function( data ) {
+    			var unnamed_file_count = 0;
     			$.each( data, function( key, val ) {
     				var retval;
-    				if(val.size) {
-    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a> <button class=\"btn btn-danger btn-mini\" id=\"'+val.id+'\" onclick=\"deleteFile(this)\"><i class=\"icon-white icon-trash\"></i> delete</button>',val.size,val.lastmodified]);
-    				}
-    				else {
+    				/* Hacky if conditions ahead */
+    				if(val.filename==null){
+    					console.log("Unnamed Files : "+ ++unnamed_file_count);
+    				} else {
+    					if(val.size) {
+    					// console.log("Value is "+val.id+ " "+val.url+" "+val.size);
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a> <button class=\"btn btn-danger btn-mini\" id1=\"'+val.id+'\" onclick=\"deleteFile(this)\"><i class=\"icon-white icon-trash\"></i> delete</button> <button class=\"btn btn-primary btn-mini\" name=\"'+val.url+'\" id=\"'+val.id+'\" onclick=\"shareFile(this)\"><i class=\"icon-white icon-user\"></i> share</button>',val.size,val.lastmodified]);
+    				} else {
     					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
-    				}
-    				console.log(val.editable);
+    				} 
+    				// console.log("Editable  : "+val.editable);
     				if(val.editable==true) {
     					var nTr = $('#files').dataTable().fnSettings().aoData[ retval[0] ].nTr;
     					nTr.className = "green";
     				}
-    			});
-    			
-    		});
-    		$('#files').dataTable();
-    		$("#contactLink").click(function() {
-    			if ($("#contactForm").is(":hidden")) {
-    				$("#contactForm").slideDown("slow");
-    			} else {
-    				$("#contactForm").slideUp("slow");
     			}
     		});
 
-    		$.getJSON( "/api/v1/info", function( data ) {
-    			$("#footer").html('<div class="container"><p class="text-muted">Space used : '+(parseFloat(data.used_bytes)/(1024*1024*1024)).toFixed(2)+' GB ; Free Space available : '+(parseFloat(data.free_bytes)/(1024*1024*1024)).toFixed(2)+' GB</p></div>');
-    		});
+});
+$('#files').dataTable();
+$("#contactLink").click(function() {
+	if ($("#contactForm").is(":hidden")) {
+		$("#contactForm").slideDown("slow");
+	} else {
+		$("#contactForm").slideUp("slow");
+	}
+});
 
-    	});
+$.getJSON( "/api/v1/info", function( data ) {
+	$("#footer").html('<div class="container"><p class="text-muted">Space used : '+(parseFloat(data.used_bytes)/(1024*1024*1024)).toFixed(2)+' GB ; Free Space available : '+(parseFloat(data.free_bytes)/(1024*1024*1024)).toFixed(2)+' GB</p></div>');
+});
+
+});
 
 
 
@@ -143,16 +160,25 @@ function deleteFile(obj){
 	bootbox.confirm("Are you sure?", function(result) {
 		console.log("Confirm deletion: "+result);
 		if(result){
-			$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
+			$.getJSON( "/api/v1/delete/"+obj['id1'], function( data ) {
 				console.log(data);
-				$("#"+obj['id']).hide();
+				$("#"+obj['id1']).hide();
 			});
 		} 
 	}); 
 
 }
 
-</script>
+function shareFile(obj){
+	console.log(obj['id']);
+	console.log(obj['name']);
+	$.getJSON( "/api/v1/share?url="+obj['name'], function( data ) {
+		console.log(data);
+		bootbox.alert(data.status);
+		$("#"+obj['id']).hide();
+	});
+}
+
 </script>
 </body>
 </html>
