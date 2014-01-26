@@ -42,6 +42,19 @@ app.configure(function(){
   }));
 });
 
+app.get(API_ROOT + '/authme', function (request, response) {
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+
+  console.log('User', request.user);
+  console.log(request.query);
+  if (request.user) {
+    // TODO: Might need to re-login
+    response.end(JSON.stringify({'error': 'Already logged in'}));
+    return;
+  } else {
+    AuthGoogle.getUserInfo(request.query.access_token, response);
+  }
+});
 
 app.get(API_ROOT + '/list/:mimeType', function (request, response) {
   console.log('User', request.user);
