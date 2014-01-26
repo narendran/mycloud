@@ -8,7 +8,7 @@ var AuthGoogle = {};
 
 AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
   console.log(googleMetadata);
-  User.find({'id': googleMetadata.id}, function(err, users) {
+  User.find({'google.id': googleMetadata.id}, function(err, users) {
     if(err) throw err;
     var user;
     if(users.length > 0) {
@@ -18,13 +18,13 @@ AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
        user = new User();
      }
 
-     user.id = googleMetadata.id;
      user.given_name = googleMetadata.given_name;
      user.family_name = googleMetadata.family_name;
      user.picture = googleMetadata.picture;
      if (! user.google) {
        user.google = {};
      }
+     user.google.id = googleMetadata.id;
      user.google.access_token = googleMetadata.id_token;
      user.google.refresh_token = googleMetadata.refresh_token;
      user.google.access_token_expiry = googleMetadata.access_token_expiry;
@@ -69,7 +69,10 @@ AuthGoogle.convertFromGoogleFile = function(file) {
     'size': file.fileSize,
     'lastmodified': file.modifiedDate,
     'url': file.alternateLink,
-    'editable': file.editable
+    'editable': file.editable,
+    'thumbnail': file.thumbnailLink,
+    'embed' : file.embedLink,
+    'id' : file.id
   }
 }
 
@@ -80,6 +83,35 @@ AuthGoogle.getGoogleAuth = function(request) {
   });
   return auth;
 };
+
+AuthGoogle.getinfo = function(request, consolidated, callback) {
+  var auth = AuthGoogle.getGoogleAuth(request);
+
+  googleapis.discover('drive', 'v2').execute(
+    function(err, client) {
+      client
+        .drive.about.get()
+        .withAuthClient(auth)
+        .execute(function(err, result) {
+          console.log('Error:', err);
+          console.log('Result:', result);
+          var driveUsedBytes = parseInt(result['quotaBytesUsed']);
+          var totalBytes = parseInt(result['quotaBytesTotal']);
+
+          // Include Drive/Gmail/Plus etc
+          var totalUsedBytes = parseInt(result['quotaBytesUsedAggregate']);
+          var freeBytes = totalBytes - totalUsedBytes;
+          var totalAvailableBytes = freeBytes + driveUsedBytes;
+
+          consolidated.info.free_bytes += freeBytes;
+          consolidated.info.used_bytes += driveUsedBytes;
+          consolidated.info.total_bytes += totalAvailableBytes;
+
+          consolidated.counter --;
+          callback(consolidated);
+        })
+    });
+}
 
 AuthGoogle.listfiles = function(request, consolidated, callback) {
   var auth = AuthGoogle.getGoogleAuth(request);
