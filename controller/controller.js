@@ -13,11 +13,43 @@ var UserModel = config.mongoose.model('User', require('./User'));
 var API_ROOT = '/api/v1';
 
 everyauth.everymodule.findUserById(function(userId, callback) {
+  console.log('FindUserByID :: ', arguments);
   UserModel.find({'_id': userId}, function(err, users) {
     if(err) throw err;
     callback(null, users[0]);
   });
 });
+
+var app = express();
+
+var myfilter = function (req, res, next) {
+  console.log('Filtering..');
+  console.log(req.session);
+  if (req.user) {
+    return next();
+  }
+
+  if (! req.query.user) {
+    return next();
+  }
+
+  UserModel.find({'google.id': req.query.user},
+    function(err, users) {
+      if (err || !users || users.length <= 0) {
+        return next();
+      }
+      req.session.auth = req.user = users[0];
+      req.session.auth.loggedIn = true;
+      req.session.auth.userId = users[0]._id;
+      req.session.auth['google'].user = users[0];
+      req.user = users[0];
+      req.session.save(function () {
+        console.log('Session after lot of work!', req.session);
+        next();
+      });
+    }
+  );
+}
 
 app.use(express.bodyParser())
 .use(express.logger())
@@ -26,7 +58,38 @@ app.use(express.bodyParser())
   secret: 'FxT10477A93d54HJx5',
   store: new MongoStore({mongoose_connection: config.mongoose.connections[0]})
 }))
+.use(myfilter)
 .use(everyauth.middleware());
+
+app.get("/", function (req, res) {
+  console.log(req.toString());
+  console.log("Check");
+  var file = req.user!=undefined ? '/webui/home.html' : '/webui/index.html';
+  var fs = require('fs');
+  fs.readFile(__dirname + file, function (err, data) {
+    if (err) {
+      res.writeHead(500);
+      return res.end(err.toString());
+    }
+    res.writeHead(200);
+    res.end(data);
+  });
+});
+
+app.get("/media.html", function (req, res) {
+  var file = req.user!=undefined ? '/webui/media.html' : '/webui/index.html';
+  var fs = require('fs');
+  fs.readFile(__dirname + file, function (err, data) {
+    if (err) {
+      res.writeHead(500);
+      return res.end(err.toString());
+    }
+    res.writeHead(200);
+    res.end(data);
+  });
+});
+
+
 
 app.engine('.html', require('ejs').__express);
 app.set('views', __dirname + '/webui');
@@ -42,6 +105,19 @@ app.configure(function(){
   }));
 });
 
+app.get(API_ROOT + '/authme', function (request, response) {
+
+  console.log('User', request.user);
+  console.log(request.query);
+  if (request.user) {
+    // TODO: Might need to re-login
+    response.writeHead(200, {'Content-Type' : 'application/json'});
+    response.end(JSON.stringify({'error': 'Already logged in'}));
+    return;
+  } else {
+    AuthGoogle.getUserInfo(request, response);
+  }
+});
 
 app.get(API_ROOT + '/list/:mimeType', function (request, response) {
   console.log('User');
@@ -104,7 +180,7 @@ app.get(API_ROOT + '/search', function (request, response) {
   // Should get auth token here.
   // Get authtoken from all services.
   var auth = AuthGoogle.getGoogleAuth(request);
-  var search_key = "\'Service\'"  // Should be obtained from request. Should be enclosed within quotes
+  var search_key = request.query.q  // Should be obtained from request. Should be enclosed within quotes
   console.log("SearchKey: " + search_key)
 
   // TODO: This auth check should likely happen earlier.
@@ -116,7 +192,7 @@ app.get(API_ROOT + '/search', function (request, response) {
   console.log("Before making call");
   console.log(new Date());
   googleapis.discover('drive', 'v2').execute(function(err, client) {
-    var search_query = 'fullText contains ' +search_key;
+    var search_query = 'fullText contains \'' +search_key+'\'';
     var query_obj= {'maxResults':10, 'q':search_query}
     console.log("query: " + JSON.stringify(query_obj))
     client
@@ -150,10 +226,10 @@ app.get(API_ROOT + '/read', function (request, response) {
 	    .execute(function(err, result) {
 	      if(err) {console.log(err)}
 	        if(result) {
-        	  console.log(result);
-        	  response.writeHead(200, {'Content-Type' : 'application/json'});
-        	  response.end(JSON.stringify({'status': err}));
+        	  console.log(result); 
         	}
+          response.writeHead(200, {'Content-Type' : 'application/json'});
+          response.end(JSON.stringify({'status': err}));
 	});
    });
 });
@@ -232,17 +308,25 @@ app.get(API_ROOT + '/share', function (request, response) {
 app.get(API_ROOT + '/delete/:fileid', function (request, response) {
   console.log("FILE ID : "+request.params.fileid);
   var auth = AuthGoogle.getGoogleAuth(request);
+  
   googleapis.discover('drive', 'v2').execute(function(err, client) {
     client
     .drive.files.delete({'fileId':request.params.fileid.toString()})
     .withAuthClient(auth)
     .execute(function(err, result) {
-      if(err) {console.log(err)}
+      if(err) {console.log(err)
+          response.writeHead(200, {'Content-Type' : 'application/json'});
+          response.end(JSON.stringify({'status': 'Failed'}));
+          return;
+      }
+
         if(result) {
           console.log(result);
           response.writeHead(200, {'Content-Type' : 'application/json'});
-          response.end(JSON.stringify({'status': 'TODO: Delete'}));
+          response.end(JSON.stringify({'status': 'Success'}));
+          
         }
+        
       });
   });
   
@@ -278,32 +362,6 @@ app.get(API_ROOT + '/info', function(request, response) {
   AuthGoogle.getinfo(request, consolidatedInfo, callback);
 });
 
-app.get("/media.html", function (req, res) {
-  var file = req.user!=undefined ? '/webui/media.html' : '/webui/index.html';
-  var fs = require('fs');
-  fs.readFile(__dirname + file, function (err, data) {
-    if (err) {
-      res.writeHead(500);
-      return res.end(err.toString());
-    }
-    res.writeHead(200);
-    res.end(data);
-  });
-});
-
-app.get("/", function (req, res) {
-  console.log(req.toString(),'color: green;');
-  var file = req.user!=undefined ? '/webui/home.html' : '/webui/index.html';
-  var fs = require('fs');
-  fs.readFile(__dirname + file, function (err, data) {
-    if (err) {
-      res.writeHead(500);
-      return res.end(err.toString());
-    }
-    res.writeHead(200);
-    res.end(data);
-  });
-});
 
 app.listen(config.port, function() {
   console.log('Listening on port ', config.port);

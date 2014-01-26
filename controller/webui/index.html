@@ -12,72 +12,69 @@
 	<link href="css/signinslide.css" rel="stylesheet">
 	<link href="css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet">
 	<link href="css/jquery.cluetip.css" rel="stylesheet">
+	<script src="https://code.jquery.com/jquery.min.js"></script>
 	<style type="text/css">
 	body {
 		padding-top: 40px;
 		/* 60px to make the container go all the way to the bottom of the topbar */
-		background-image:url(css/images/brickwall.png); background-repeat:repeat;
+		/*background-image:url(css/images/brickwall.png); background-repeat:repeat;*/
 	}
 	</style>
 </head>
 
 <body>
 
-	<div id="wrap">
+	<!-- <div id="wrap">
 		<div class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
 			<div class="container">
-				<div class="span10">
-					<div class="navbar-header">
-						<a class="navbar-brand" href="#">MyCloud</a>
-					</div>
-					<div class="collapse navbar-collapse">
+				<div class="span10"> -->
+				<!-- 	<div class="navbar-header">
+						<a class="navbar-brand">MyCloud</a>
+					</div> -->
+					<!-- <div class="collapse navbar-collapse">
 						<ul class="nav navbar-nav">
 							<li class="active"><a href="/home.html">Home</a></li>
-							<li><a href="#about">Bookmarks</a></li>
+							<li><a href="/contentsearch.html">Search by Content</a></li>
 							<li><a href="/media.html">Media</a></li>
 						</ul>
-					</div><!--/.nav-collapse -->
-				</div>
+					</div> --><!--/.nav-collapse -->
+				<!-- </div> -->
 
-				<div class="span2">
+				<!-- <div class="span2"> -->
 					<div id="contactFormContainer">
 						<div id="contactForm">
-							<div class="fbtable">
+							
 								<div class="controls">
-									<br/><center><a class="btn btn-large btn-info" href="auth/google">Sign in With Google</a></center>
+									<br/><center><a class="btn btn-large btn-info" href="auth/google">Sign in With Google</a>
+									<a class="btn btn-large btn-success" href="auth/dropbox">Sign in With DropBox</a></center>
 								</div>
-							</div>
+							
 						</div>
 						<div id="contactLink"></div>
 					</div>
-				</div>
+				<!-- </div>
 			</div>
-		</div>
+		</div> -->
 		<!-- Begin page content -->
 		<div class="container">
 			<div class="page-header">
-				<h1>Pls2Login :) Else, enjoy watching the stats and videos here.</h1>
+				<center><img src="img/generic_cloud.jpg" onload="$(this).fadeIn();"></center></div>
 			</div>
-		</div>
-	</div>
+		
 
-	<div id="footer">
-		<div class="container">
-			<p class="text-muted">Space used : 15 GB ; Free Space available : 1.5 GB</p>
-		</div>
-	</div>
 
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://code.jquery.com/jquery.min.js"></script>
+    
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
     <script src="js/jquery.cluetip.min.js"></script>
     <script type="text/javascript">
 
     	$(document).ready(function() {
+
     		$("#contactLink").click(function() {
     			if ($("#contactForm").is(":hidden")) {
     				$("#contactForm").slideDown("slow");

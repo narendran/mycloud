@@ -1,7 +1,8 @@
 
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html lang="en">
-<head>
+<head><meta name="robots" content="NOODP"/>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,22 +15,28 @@
 	<link href="css/jquery.cluetip.css" rel="stylesheet">
 	<link href="css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
 	<link rel="stylesheet" type="text/css" href="css/DT_bootstrap.css">
-	<link rel="stylesheet" type="text/css" href="http://bootboxjs.com/css/main.css">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap-theme.min.css">
+	<link href="css/thumbnail-gallery.css" rel="stylesheet">
+	<link href="css/demo_table.css" rel="stylesheet">
 	<style type="text/css">
 		body {
-			padding-top: 40px;
+			/* padding-top: 40px; */
 			/* 60px to make the container go all the way to the bottom of the topbar */
+
 			background-image:url(css/images/brickwall.png); background-repeat:repeat;
 		}
 
-		.green {
-			background-color: lavender;
+		.thumb {
+			margin-bottom: 20px;
 		}
 
-		.btn {
-			padding: 0px 0px;
+		#spaced {
+			margin-right: 20px;
 		}
 
+		#tall {
+			height: 40px !important;
+		}
 	</style>
 </head>
 
@@ -46,8 +53,8 @@
 					</div>
 					<div class="collapse navbar-collapse">
 						<ul class="nav navbar-nav">
-							<li class="active"><a href="/home.html">Home</a></li>
-							<li><a href="/contentsearch.html">Search by Content</a></li>
+							<li><a href="/home.html">Home</a></li>
+							<li class="active"><a href="/contentsearch.html">Search by Content</a></li>
 							<li><a href="/media.html">Media</a></li>
 						</ul>
 					</div><!--/.nav-collapse -->
@@ -56,13 +63,26 @@
 		</div>
 
 
-		<!-- Begin page content -->
 		<div class="container">
-			<div class="page-header">
-				<h1>Files listing</h1>
-			</div>
-			<div>
-				<table cellpadding="0" cellspacing="0" border="0" class="table table-bordered" id="files">
+		<div class="row-fluid"><div class="span4"></div>
+			<div class="span4"><form class="navbar-form" role="search" method="get" id="search-form" name="search-form">
+				<form class="navbar-form" role="search" method="get" id="search-form" name="search-form">				
+					<div class="input-group">
+						<input type="text" class="form-control" placeholder="Hacktech venue and date.." id="search_query" name="query" value="">
+						<div class="input-group-btn">
+							<button  class="btn btn-success" onclick="fillDT(); return false;"><span class="glyphicon glyphicon-search"></span></button>
+						</div>
+					</div>
+				</form>
+			</form></div><div class="span4"></div>
+		</div>
+		</div>
+	
+	<hr/>
+
+	<!-- Actual content -->
+	<div class="container">
+		<table cellpadding="0" cellspacing="0" border="0" class="table table-bordered" id="files">
 					<thead>
 						<tr>
 							<th>File name</th>
@@ -75,14 +95,10 @@
 					</tbody>
 				</table>
 
-			</div>
-		</div>
-
+	</div>
 	</div>
 
-	<div id="footer">
-		
-	</div>
+	
 
 
     <!-- Bootstrap core JavaScript
@@ -92,17 +108,17 @@
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
     <script src="js/jquery.cluetip.min.js"></script>
-    <script src="js/bootbox.min.js"></script>
     <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
-    ]
+    
     <script type="text/javascript">
 
-    	$(document).ready(function() {
-    		$.getJSON( "/api/v1/list/all", function( data ) {
-    			$.each( data, function( key, val ) {
-    				var retval;
+    function fillDT(){
+    	var search_query = $("#search_query").val();
+    	$.getJSON( "/api/v1/search?q="+search_query, function( data ) {
+				$.each( data, function( key, val ) {
+				var retval;
     				if(val.size) {
-    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a> <button class=\"btn btn-danger btn-mini\" id=\"'+val.id+'\" onclick=\"deleteFile(this)\"><i class=\"icon-white icon-trash\"></i> delete</button>',val.size,val.lastmodified]);
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>',val.size,val.lastmodified]);
     				}
     				else {
     					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
@@ -111,48 +127,12 @@
     				if(val.editable==true) {
     					var nTr = $('#files').dataTable().fnSettings().aoData[ retval[0] ].nTr;
     					nTr.className = "green";
-    				}
-    			});
-    			
+    				}  
+    				$('#files').dataTable();  			
     		});
-    		$('#files').dataTable();
-    		$("#contactLink").click(function() {
-    			if ($("#contactForm").is(":hidden")) {
-    				$("#contactForm").slideDown("slow");
-    			} else {
-    				$("#contactForm").slideUp("slow");
-    			}
-    		});
+    });
+    }
+    </script>
 
-    		$.getJSON( "/api/v1/info", function( data ) {
-    			$("#footer").html('<div class="container"><p class="text-muted">Space used : '+(parseFloat(data.used_bytes)/(1024*1024*1024)).toFixed(2)+' GB ; Free Space available : '+(parseFloat(data.free_bytes)/(1024*1024*1024)).toFixed(2)+' GB</p></div>');
-    		});
-
-    	});
-
-
-
-function closeForm() {
-	$("#messageSent").show("slow");
-	setTimeout(
-		'$("#messageSent").hide();$("#contactForm").slideUp("slow")',
-		2000);
-}
-
-function deleteFile(obj){
-	bootbox.confirm("Are you sure?", function(result) {
-		console.log("Confirm deletion: "+result);
-		if(result){
-			$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
-				console.log(data);
-				$("#"+obj['id']).hide();
-			});
-		} 
-	}); 
-
-}
-
-</script>
-</script>
 </body>
 </html>
