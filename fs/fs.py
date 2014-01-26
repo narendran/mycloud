@@ -37,6 +37,12 @@ class MyCloudOperations(llfuse.Operations):
   def lookup(self, parent_inode, name):
     raise 'Lookup not implemented'
 
+  def opendir(self, inode):
+    return inode
+
+  def readdir(self, inode, offset):
+    raise 'Readdir not implemented'
+
   def getattr(self, inode):
     entry = llfuse.EntryAttributes()
     entry.st_ino = inode
