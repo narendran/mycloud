@@ -1,23 +1,16 @@
 @CHARSET "UTF-8";
 
-#contactFormContainer {
-	z-index : 1;
-	position: absolute;
-	right: 0px;
-	float: right;
-}
-
 #contactForm {
-	height: 120px;
-	width: 300px;
+	height: 90px;
+	width: 500px;
 	background-color: white;
 	display: none;
 }
 
 #contactLink {
 	height: 40px;
-	width: 300px;
-	background-image: url('images/login.png');
+	width: 440px;
+	background-image: url('images/keepcalm.png');
 	display: block;
 	cursor: pointer;
 }
@@ -25,4 +18,15 @@
 #messageSent {
 	color: #ff9933;
 	display: none;
+}
+
+#contactFormContainer
+{
+    position:absolute;
+    width:592px; /*image width */
+    height:52px; /*image height */
+    left:55%; 
+    top:75%;
+    margin-left:-296px; /*image width/2 */
+    margin-top:-256px; /*image height/2 */
 }

@@ -81,9 +81,7 @@
 	</div>
 
 	<div id="footer">
-		<div class="container">
-			<p class="text-muted">Space used : 15 GB ; Free Space available : 1.5 GB</p>
-		</div>
+		
 	</div>
 
 
@@ -125,7 +123,14 @@
     				$("#contactForm").slideUp("slow");
     			}
     		});
+
+    		$.getJSON( "/api/v1/info", function( data ) {
+    			$("#footer").html('<div class="container"><p class="text-muted">Space used : '+(parseFloat(data.used_bytes)/(1024*1024*1024)).toFixed(2)+' GB ; Free Space available : '+(parseFloat(data.free_bytes)/(1024*1024*1024)).toFixed(2)+' GB</p></div>');
+    		});
+
     	});
+
+
 
 function closeForm() {
 	$("#messageSent").show("slow");
