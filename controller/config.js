@@ -5,8 +5,8 @@ var Config = {
     appSecret: process.env.GOOGLE_APP_SECRET || process.argv[5] || '7BFDEW_CK-NtILzdjiAemkzd'
   },
   dropbox: {
-    key: 'n7ick3jdpi3o9dd',
-    secret: '8n3dkgkkwq8g50v'
+    key: 'wluts4opx9mq97g',
+    secret: 'a8m7q3hcrbxfxz5'
   },
   hostName: process.env.HOST_NAME || process.argv[3] || '',
   port: process.env.PORT || 5000,

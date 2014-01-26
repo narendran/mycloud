@@ -1,21 +1,10 @@
 var express = require('express');
 var app = express();
 var MongoStore = require('connect-mongo')(express);
-
 var everyauth = require('everyauth');
 var config = require('./config');
-
-var Dropbox = require("dropbox");
-
 var User = config.mongoose.model('User', require('./User'));
-
 var API_ROOT = '/api/v1';
-
-var client = new Dropbox.Client({
-    key: "n7ick3jdpi3o9dd",
-    secret: "8n3dkgkkwq8g50v"
-});
-
 
 
 var AuthDropbox = {};
@@ -31,13 +20,11 @@ AuthDropbox.findOrCreateUserByDropboxData = function(dbox_user, promise) {
      } else {
        user = new User();
      }
-     console.log("BLHAFHDJHLLSHDFHFDS");
      user.display_name = dbox_user.display_name;
 
      user.dropbox.id = dbox_user.id;
      user.dropbox.access_token = dbox_user.access_token;
      user.dropbox.access_secret = dbox_user.access_secret;
-     user.dropbox.access_token_expiry = dbox_user.access_token_expiry;
 
      user.save(function(err) {
        if(err) throw err;
@@ -47,7 +34,8 @@ AuthDropbox.findOrCreateUserByDropboxData = function(dbox_user, promise) {
 };
 
 
-everyauth.everymodule.findUserById(function(userId, callback) {
+everyauth.everymodule.findUserById(function(userId, callback) {         /// DUP REmove
+  console.log("In Module finduserbyid:" ,userId)
   User.find({'_id': userId}, function(err, users) {
     if(err) throw err;
     callback(null, users[0]);
@@ -56,85 +44,22 @@ everyauth.everymodule.findUserById(function(userId, callback) {
 
 
 
-app.engine('.html', require('ejs').__express);
-app.set('views', __dirname + '/webui');
-app.get("/", function handler (req, res) {
-  res.render('home.html');
-});
-
-
-app.configure(function(){
-  app.use(express.static(__dirname + '/webui'));
-  app.use(express.errorHandler({
-    dumpExceptions: true, 
-    showStack: true
-  }));
-});
-
-
-
-function requestToken(res) {
-    app.requesttoken(function(status, req_token) {
-        res.writeHead(200, {
-            "Set-Cookie" : ["oat=" + req_token.oauth_token,
-                            "oats=" + req_token.oauth_token_secret]
-        });
-        res.write("<script>window.location='https://www.dropbox.com/1/oauth/authorize" +
-                  "?oauth_token=" + req_token.oauth_token +
-                  "&oauth_callback=" + callbackServiceX + "/authorized" + "';</script>");
-        res.end();
-    });
-}
-/*
-//user visits url to grant authorization to client
-app.get(/\/authorized/, function(req, res) {
-    // callback from dropbox authorization
-    accessToken(req, res);
-});/**/
-
-//now generate access tokens from the request token
-function accessToken(req, res) {
-    var req_token = {oauth_token : req.cookies.oat, oauth_token_secret : req.cookies.oats};
-    dbox.accesstoken(req_token, function(status, access_token) {
-        if (status == 401) {
-            res.write("Sorry, Dropbox reported an error: " + JSON.stringify(access_token));
-        }
-        else {
-            var expiry = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 days
-            res.writeHead(302, {
-                "Set-Cookie" : "uid=" + access_token.uid + "; Expires=" + expiry.toUTCString(),
-                "Location" : "/"
-            });
-            db.collection("user", function(err, collection) {
-                var entry = {};
-                entry.uid = access_token.uid;
-                entry.oauth_token = access_token.oauth_token;
-                entry.oauth_token_secret = access_token.oauth_token_secret;
-                collection.update({"uid": access_token.uid}, {$set: entry}, {upsert:true});
-            });
-        }
-        res.end();
-    });
-}
-
-
 everyauth.dropbox
   .entryPath('/auth/dropbox')
   .callbackPath('/auth/dropbox/callback')
   .consumerKey(config.dropbox.key)
   .consumerSecret(config.dropbox.secret)
   .findOrCreateUser( function (sess, accessToken, accessSecret, user) {
-    console.log("HFSH");
     console.log('Session:', sess);
     console.log('Access Token:', accessToken);
     console.log('Access Secret:', accessSecret);
-    console.log('User:', user);
+    console.log('User:', user);/**/
 
     user.access_token = accessToken;
     user.access_secret = accessSecret;
     var promise = this.Promise();
     AuthDropbox.findOrCreateUserByDropboxData(user, promise);
-    return user;
+    return promise;
     })
   .myHostname(config.hostName)
   .redirectPath('/');
@@ -143,7 +68,6 @@ everyauth.dropbox
 
 
 
-var app = express();
 
 app.use(express.bodyParser())
    .use(express.logger())
@@ -180,16 +104,24 @@ app.get(API_ROOT + '/list', function (request, response) {
   var json_response = new Array();
   // Should get auth token here.
   // Get authtoken from all services.
-        var client = dropbox.client('8n3dkgkkwq8g50v');
-        client.metadata(dir, {hash : hash}, function(status, reply) {
-            if (status != 304) {
-                metadata = reply;
-                cacheMetadata(uid, dir, metadata);
-            }
-            response.write(metadata);
-            response.end();
-        });
+  everyauth.dropbox.oauth.get('https://api.dropbox.com/1/account/info', request.user.dropbox.access_token,
+                            request.user.dropbox.access_secret, function (error, data) {
+                console.log(JSON.stringify(data), error)
+                console.log(JSON.stringify(data), error)
+                console.log(JSON.stringify(data), error)
+    });
+  response.end(JSON.stringify({'status': 'TODO: Read'}));
 });
+
+
+
+
+
+
+
+
+
+
 
 app.get(API_ROOT + '/read', function (request, response) {
   response.writeHead(200, {'Content-Type' : 'application/json'});
