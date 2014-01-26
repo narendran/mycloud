@@ -44,6 +44,8 @@ app.configure(function(){
 
 
 app.get(API_ROOT + '/list/:mimeType', function (request, response) {
+  console.log('User');
+  console.log('User', request.user);
   console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
 
@@ -87,7 +89,9 @@ app.get(API_ROOT + '/list/:mimeType', function (request, response) {
       break;
     }
     default :{
-      AuthGoogle.listfiles(request, consolidatedList, callback);  
+      consolidatedList.counter++;
+      AuthGoogle.listfiles(request, consolidatedList, callback);
+      AuthDropbox.listfiles(request, consolidatedList, callback); 
     }
   }
 
