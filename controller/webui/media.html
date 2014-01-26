@@ -33,7 +33,7 @@
 
 	<div id="wrap">
 
-	
+
 		<div class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
 			<div class="container">
 				<div class="span10">
@@ -42,9 +42,10 @@
 					</div>
 					<div class="collapse navbar-collapse">
 						<ul class="nav navbar-nav">
-							<li class="active"><a href="/home.html">Home</a></li>
-							<li><a href="#about">Bookmarks</a></li>
-							<li><a href="/media.html">Media</a></li>
+							<li><a href="/home.html">Home</a></li>
+							<li><a href="/contentsearch.html">Search by Content</a></li>
+							<li><a href="#bookmarks">Bookmarks</a></li>
+							<li class="active"><a href="/media.html">Media</a></li>
 						</ul>
 					</div><!--/.nav-collapse -->
 				</div>
@@ -54,8 +55,8 @@
 
 		<!-- Begin page content -->
 		<div class="container">
-			<audio src="https://docs.google.com/file/d/0BwsMqfm3Zup4Q0hFV0NVUzJFUHc/edit"></audio>
-		<hr><h1>Images
+		<audio src="https://docs.google.com/file/d/0BwsMqfm3Zup4Q0hFV0NVUzJFUHc/preview"></audio>
+		<hr><h1>Images</h1><br/>
 			<div class="row">
 			<div id="img-content"></div>
 			<hr>
@@ -64,7 +65,7 @@
 
 		<!-- Begin video content -->
 		<div class="container">
-		<hr><h1>Video</h1>
+		<hr><h1>Video</h1><br/>
 			<div class="row">
 			<div id="vid-content"></div>
 			<hr>
@@ -72,8 +73,9 @@
 		</div>
 
 		<!-- Begin audio content -->
+		<hr/>
 		<div class="container">
-		<hr><h1>Audio</h1>
+		<h1>Audio</h1><br/>
 			<div class="row">
 			<div id="aud-content"></div>
 			<hr>
@@ -96,6 +98,7 @@
     <script src="js/jquery.cluetip.min.js"></script>
     <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
     <script type="text/javascript" charset="utf-8" language="javascript" src="js/DT_bootstrap.js"></script>
+    <script src="http://code.createjs.com/easeljs-0.7.1.min.js"></script>
     <script type="text/javascript">
     $.getJSON( "/api/v1/list/image", function( data ) {
 
@@ -119,7 +122,7 @@
     $.getJSON( "/api/v1/list/audio", function( data ) {
 
     			$.each( data, function( key, val ) {
-    				var content = "<div class=\"col-lg-3 col-md-4 col-xs-6 thumb\"><audio controls><source src=\""+val.url+"\" type=\"audio/mpeg\">Your browser does not support the audio element.</audio><br/>"+val.filename+"</div>";
+    				var content = "<div class=\"span2\"></div><div class=\"span4\"><audio controls><source src=\""+val.url+"\" type=\"audio/mpeg\" width=\"300\" height=\"300\">Your browser does not support the audio element.</audio><br/>"+val.filename+"</div><div class=\"span2\"></div>";
     				$('#aud-content').append(content);
     			});
     			
