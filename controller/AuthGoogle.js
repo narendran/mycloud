@@ -76,13 +76,37 @@ AuthGoogle.convertFromGoogleFile = function(file) {
   }
 }
 
-AuthGoogle.getGoogleAuth = function(request) {
+AuthGoogle.getGoogleAuth = function(request, callback) {
   var auth = new googleapis.OAuth2Client();
-    auth.setCredentials({
-      access_token: request.user.google.access_token  // This is fetched from user.
+  auth.setCredentials({
+    access_token: request.user.google.access_token  // This is fetched from user.
   });
   return auth;
 };
+
+AuthGoogle.getUserInfo = function(key, response) {
+  googleapis.discover('oauth2', 'v1').execute(
+    function(err, client) {
+      client.oauth2.tokeninfo({
+        access_token: key
+      })
+      .execute(function(err, result) {
+        console.log('Token info', result);
+        if (err || !result || result['expires_in'] <= 0) {
+          response.end(JSON.stringify({'error': 'Not logged in'}));
+          return;
+        }
+
+        // Ok, this guy has a valid key. See if he has an "account" with us.
+        User.find({'google.id': result['user_id']},
+          function(err, users) {
+            console.log('Users', users);
+          }
+        );
+      });
+    }
+  );
+}
 
 AuthGoogle.getinfo = function(request, consolidated, callback) {
   var auth = AuthGoogle.getGoogleAuth(request);
