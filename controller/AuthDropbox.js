@@ -6,7 +6,10 @@ var config = require('./config');
 var User = config.mongoose.model('User', require('./User'));
 var API_ROOT = '/api/v1';
 
+
 var AuthDropbox = {};
+
+AuthDropbox.ApiBaseUrl = 'https://api.dropbox.com/1/'
 
 AuthDropbox.findOrCreateUserByDropboxData = function(dbox_user, promise, session) {
   console.log(dbox_user);
@@ -74,4 +77,55 @@ everyauth.dropbox
   .redirectPath('/');
 
 
+
+AuthDropbox.listfiles = function(request, consolidated, callback) {
+    console.log("ENTERED DFLFSHHDSFKLHF");
+  if (request && request.user && request.user.dropbox && request.user.dropbox.access_token) {
+    console.log(AuthDropbox.ApiBaseUrl + 'metadata/dropbox?',
+      request.user.dropbox.access_token,
+      request.user.dropbox.access_secret)
+    everyauth.dropbox.oauth.get(
+      AuthDropbox.ApiBaseUrl + 'metadata/dropbox',
+      request.user.dropbox.access_token,
+      request.user.dropbox.access_secret,
+      function (err, op) {
+        if (err) {
+          console.log('Error while fetching file list: ', err, 'with result', op);
+        } else {
+          var data = JSON.parse(op);
+          consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data));
+          //console.log(data);
+          for (var i=0; i<data.contents.length; i++) {
+            consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data.contents[i]));
+          }
+        }
+        console.log("After call completes");
+        console.log(new Date());
+        consolidated.counter --;
+        callback(consolidated);
+    });
+    console.log("After making call");
+    console.log(new Date());
+  } else {
+    consolidated.counter --;
+    callback(consolidated);
+  }
+};
+
+AuthDropbox.convertFromDropboxFile = function(file) {
+  var path_broken = file['path'].split('/');
+  var op_file = {
+    'filename': path_broken[path_broken.length-1],
+    'size': file.bytes,
+    'lastmodified': file.modified,
+    'id' : 0,
+    'path': file.path,
+    'url': 'https://www.dropbox.com/home' + file.path
+  }
+  console.log(op_file);
+  return op_file;
+}
+
+
+module.exports = AuthDropbox;
 

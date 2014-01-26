@@ -188,37 +188,42 @@ AuthGoogle.getinfo = function(request, consolidated, callback) {
 }
 
 AuthGoogle.listfiles = function(request, consolidated, callback) {
-  var auth = AuthGoogle.getGoogleAuth(request);
-  var mimeTypeReq = request.params.mimeType.replace("\.","/");
-  console.log("Before making call");
-  console.log(new Date());
-  console.log('MIMETYPE requested is '+mimeTypeReq);
-  var filter;
-  if(mimeTypeReq=='all'){
-    filter = {'maxResults': '100'};
+  if (request && request.user && request.user.google && request.user.google.access_token) {
+    var auth = AuthGoogle.getGoogleAuth(request);
+    var mimeTypeReq = request.params.mimeType.replace("\.","/");
+    console.log("Before making call");
+    console.log(new Date());
+    console.log('MIMETYPE requested is '+mimeTypeReq);
+    var filter;
+    if(mimeTypeReq=='all'){
+      filter = {'maxResults': '100'};
+    } else {
+      filter = {'maxResults': '100', 'q':'mimeType = \''+mimeTypeReq+'\''}
+    }
+    googleapis.discover('drive', 'v2').execute(function(err, client) {
+      client
+          .drive.files.list(filter)
+          .withAuthClient(auth)
+          .execute(function(err, result) {
+            if (err) {
+              console.error('Error while fetching file list: ', err, 'with result', result);
+            }
+            for (var i=0; i<result.items.length; i++) {
+              console.log('error:', err, 'inserted:', result.items[i]['title']);
+              consolidated.fileList.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
+            }
+            console.log("After finishing call");
+            console.log(new Date());
+            consolidated.counter --;
+            callback(consolidated);
+          });
+    console.log("After making call");
+    console.log(new Date());
+    });
   } else {
-    filter = {'maxResults': '100', 'q':'mimeType = \''+mimeTypeReq+'\''}
+    consolidated.counter --;
+    callback(consolidated);
   }
-  googleapis.discover('drive', 'v2').execute(function(err, client) {
-    client
-        .drive.files.list(filter)
-        .withAuthClient(auth)
-        .execute(function(err, result) {
-          if (err) {
-            console.error('Error while fetching file list: ', err, 'with result', result);
-          }
-          for (var i=0; i<result.items.length; i++) {
-            console.log('error:', err, 'inserted:', result.items[i]['title']);
-            consolidated.fileList.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
-          }
-          console.log("After finishing call");
-          console.log(new Date());
-          consolidated.counter --;
-          callback(consolidated);
-        });
-  console.log("After making call");
-  console.log(new Date());
-  });
 }
 
 module.exports = AuthGoogle;

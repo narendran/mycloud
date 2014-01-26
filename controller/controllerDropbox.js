@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var MongoStore = require('connect-mongo')(express);
 var everyauth = require('everyauth');
+var AuthDropbox = require('./AuthDropbox');
 
 var config = require('./config');
 var User = config.mongoose.model('User', require('./User'));
@@ -45,6 +46,28 @@ everyauth.everymodule.findUserById(function(userId, callback) {         /// DUP 
 
 
 
+everyauth.dropbox
+  .entryPath('/auth/dropbox')
+  .callbackPath('/auth/dropbox/callback')
+  .consumerKey(config.dropbox.key)
+  .consumerSecret(config.dropbox.secret)
+  .findOrCreateUser( function (sess, accessToken, accessSecret, user) {
+    console.log('Session:', sess);
+    console.log('Access Token:', accessToken);
+    console.log('Access Secret:', accessSecret);
+    console.log('User:', user);/**/
+
+    user.access_token = accessToken;
+    user.access_secret = accessSecret;
+    var promise = this.Promise();
+    AuthDropbox.findOrCreateUserByDropboxData(user, promise);
+    return promise;
+    })
+  .myHostname(config.hostName)
+  .redirectPath('/');
+
+
+
 
 
 
@@ -57,12 +80,29 @@ app.use(express.bodyParser())
     }))
    .use(everyauth.middleware());
 
+var dbox = require("dbox");
+var dropbox = dbox.app({
+    "app_key": "n7ick3jdpi3o9dd",
+    "app_secret": "8n3dkgkkwq8g50v"
+})
+
 
 
 var UserModel = config.mongoose.model('User', require('./User'));
 
 var API_ROOT = '/api/v1';
 
+
+app.use(express.bodyParser())
+    .use(express.logger())
+    .use(express.cookieParser('miketesting'))
+    .use(express.session({
+        secret: 'FxT10477A93d54HJx5',
+        store: new MongoStore({
+            mongoose_connection: config.mongoose.connections[0]
+        })
+    }))
+    .use(everyauth.middleware());
 
 app.engine('.html', require('ejs').__express);
 app.set('views', __dirname + '/webui');
@@ -88,7 +128,7 @@ app.get(API_ROOT + '/list', function (request, response) {
   var json_response = new Array();
   // Should get auth token here.
   // Get authtoken from all services.
-  everyauth.dropbox.oauth.get('https://api.dropbox.com/1/account/info', request.user.dropbox.access_token,
+  everyauth.dropbox.oauth.get('https://api.dropbox.com/1/metadata/dropbox', request.user.dropbox.access_token,
                             request.user.dropbox.access_secret, function (error, data) {
                 console.log(JSON.stringify(data), error)
                 console.log(JSON.stringify(data), error)
@@ -96,6 +136,49 @@ app.get(API_ROOT + '/list', function (request, response) {
     });
   response.end(JSON.stringify({'status': 'TODO: Read'}));
 });
+  
+app.get(API_ROOT + '/list', function (request, response) {
+    var auth = AuthDropbox.getDropboxAuth(request);
+    console.log('User', request.user);
+	var client = dropbox.client('8n3dkgkkwq8g50v');
+    response.writeHead(200, {
+        'Content-Type': 'application/json'
+    });
+    var json_response = new Array();
+    //var dir = request.dir_name.toString();	
+    //console.log(dir);
+    //if (dir == null)
+	dir = '/';
+    // Should get auth token here.
+    // Get authtoken from all services.
+
+    console.log('i am here');
+	var options = {
+		file_limit         : 10000,              // optional
+	  	list               : true,               // optional
+	  	include_deleted    : false	           // optional
+	}
+	client.readdir('Resume', function (status, reply) {
+	close.log(reply);
+        if (status != 304) {
+            metadata = reply;
+            console.log(reply);
+	}
+                /*  for (var i=0; i<result.items.length; i++) {
+            console.log('error:', err, 'inserted:', result.items[i]['title']);
+            json_response.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
+          }
+          console.log("After finishing call");
+          console.log(new Date());
+          response.end(JSON.stringify(json_response));
+
+        response.end();*/
+    });
+});
+
+
+
+
 
 
 
