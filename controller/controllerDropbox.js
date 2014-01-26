@@ -7,7 +7,7 @@ var config = require('./config');
 
 var Dropbox = require("dropbox");
 
-var UserModel = config.mongoose.model('User', require('./User'));
+var User = config.mongoose.model('User', require('./User'));
 
 var API_ROOT = '/api/v1';
 
@@ -31,12 +31,13 @@ AuthDropbox.findOrCreateUserByDropboxData = function(dbox_user, promise) {
      } else {
        user = new User();
      }
+     console.log("BLHAFHDJHLLSHDFHFDS");
+     user.display_name = dbox_user.display_name;
 
      user.dropbox.id = dbox_user.id;
-     user.dropbox.display_name = dbox_user.display_name;
      user.dropbox.access_token = dbox_user.access_token;
      user.dropbox.access_secret = dbox_user.access_secret;
-     user.dropbox.access_token_expiry = db_data.access_token_expiry;
+     user.dropbox.access_token_expiry = dbox_user.access_token_expiry;
 
      user.save(function(err) {
        if(err) throw err;
@@ -46,14 +47,12 @@ AuthDropbox.findOrCreateUserByDropboxData = function(dbox_user, promise) {
 };
 
 
-
-
 everyauth.everymodule.findUserById(function(userId, callback) {
-    UserModel.find({'dropbox.id': userId}, function(err, users) {
-      if(err) throw err;
-      callback(null, users[0]);
-    });
+  User.find({'_id': userId}, function(err, users) {
+    if(err) throw err;
+    callback(null, users[0]);
   });
+});
 
 
 
@@ -135,7 +134,7 @@ everyauth.dropbox
     user.access_secret = accessSecret;
     var promise = this.Promise();
     AuthDropbox.findOrCreateUserByDropboxData(user, promise);
-    return promise;
+    return user;
     })
   .myHostname(config.hostName)
   .redirectPath('/');
