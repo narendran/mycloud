@@ -6,6 +6,7 @@ var MongoStore = require('connect-mongo')(express);
 var everyauth = require('everyauth');
 var config = require('./config');
 var AuthGoogle = require('./AuthGoogle');
+var AuthDropbox = require('./AuthDropbox');
 
 var UserModel = config.mongoose.model('User', require('./User'));
 
@@ -17,8 +18,6 @@ everyauth.everymodule.findUserById(function(userId, callback) {
     callback(null, users[0]);
   });
 });
-
-var app = express();
 
 app.use(express.bodyParser())
 .use(express.logger())

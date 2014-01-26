@@ -6,18 +6,42 @@ var User = config.mongoose.model('User', require('./User'));
 
 var AuthGoogle = {};
 
-AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
+AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise, session) {
   console.log(googleMetadata);
   User.find({'google.id': googleMetadata.id}, function(err, users) {
     if(err) throw err;
     var user;
+    
     if(users.length > 0) {
        // We're overwriting user object here to get reflect new auth tokens.
        user = users[0];
+       AuthGoogle.fillGoogleDataForUser(user, googleMetadata, promise);
      } else {
-       user = new User();
+       if (session && session.auth && session.auth.userId) {
+         // There must be a dropbox entry for this user. Create a google entry for this user.
+         User.find({'_id': session.auth.userId}, function(err, users2) {
+           if(err) throw err;
+           var user2;
+           if(users2.length > 0) {
+             // We're overwriting user object here to get reflect new auth tokens.
+             user2 = users2[0];
+           } else {
+             // Session data was bad.
+             user2 = new User();
+           }
+         AuthGoogle.fillGoogleDataForUser(user2, googleMetadata, promise);
+         });
+       } else {
+         user = new User();
+         AuthGoogle.fillGoogleDataForUser(user, googleMetadata, promise);
+       }
      }
+  });
+};
 
+
+AuthGoogle.fillGoogleDataForUser = function(user, googleMetadata, promise) {
+     console.log("okay,", user);
      user.display_name = googleMetadata.name;
      user.picture = googleMetadata.picture;
      if (! user.google) {
@@ -32,8 +56,8 @@ AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
        if(err) throw err;
        promise.fulfill(user);
      });
-  });
-};
+ }
+
 
 everyauth.google
   .entryPath('/auth/google')
@@ -56,7 +80,7 @@ everyauth.google
     googleUserMetadata.access_token_expiry = new Date((new Date()).getTime() + 1000 * accessTokenExtra['expires_in']);
     //console.log("User data returned from Google: ", googleUserMetadata);
     var promise = this.Promise();
-    AuthGoogle.findOrCreateUserByGoogleData(googleUserMetadata, promise);
+    AuthGoogle.findOrCreateUserByGoogleData(googleUserMetadata, promise, session);
     return promise;
   })
   .myHostname(config.hostName)
