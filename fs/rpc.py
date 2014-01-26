@@ -32,8 +32,7 @@ class GoogleDriveLogin:
   def __init__(self):
     self._access_token = None
     self._user_id = None
-    #self._consumer = oauth.Consumer(key=CONSUMER_KEY,
-    #    secret=CONSUMER_SECRET)
+    self._refresh_token = None
     self._connection = httplib.HTTPSConnection('accounts.google.com')
 
     try:
@@ -58,6 +57,9 @@ class GoogleDriveLogin:
     if 'user_id' in self._keys:
       self._user_id = self._keys['user_id']
 
+    if 'refresh_token' in self._keys:
+      self._refresh_token = self._keys['refresh_token']
+
   def write_access_token(self, access_token):
     self._keys['access_token'] = self._access_token = access_token
     handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'w')
@@ -65,6 +67,11 @@ class GoogleDriveLogin:
 
   def write_user_id(self, user_id):
     self._keys['user_id'] = self._user_id = user_id
+    handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'w')
+    handle.write(json.dumps(self._keys))
+
+  def write_refresh_token(self, refresh_token):
+    self._keys['refresh_token'] = self._refresh_token = refresh_token
     handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'w')
     handle.write(json.dumps(self._keys))
 
@@ -106,6 +113,7 @@ class GoogleDriveLogin:
 
     parsed_response = json.loads(response)
     self.write_access_token(parsed_response['access_token'])
+    self.write_refresh_token(parsed_response['refresh_token'])
 
     # x = urllib.urlopen('%s?%s' % (CONTROLLER_AUTH_URL,
     #      urllib.urlencode({'access_token': self._access_token})))
@@ -115,7 +123,30 @@ class GoogleDriveLogin:
     self.authenticate()
     resp = urllib.urlopen('%s?%s' % (TOKENINFO_URL, urllib.urlencode({'access_token': self._access_token})))
     js = json.loads(resp.read())
-    self.write_user_id(js['user_id'])
+    if 'error' in js:
+      self.refresh_token()
+      self.get_user_id()
+    else:
+      self.write_user_id(js['user_id'])
+
+  def refresh_token(self):
+    urlparams = {
+      'client_id': CLIENT_ID,
+      'client_secret': CLIENT_SECRET,
+      'refresh_token': self._refresh_token,
+      'grant_type': 'refresh_token'
+    }
+
+    print urllib.urlencode(urlparams)
+    self._connection.request('POST', ACCESS_TOKEN_URL,
+        body=urllib.urlencode(urlparams),
+        headers={"Content-type": "application/x-www-form-urlencoded"})
+    response = self._connection.getresponse().read()
+    print response
+
+    parsed_response = json.loads(response)
+    self.write_access_token(parsed_response['access_token'])
+    self.write_refresh_token(parsed_response['refresh_token'])
 
   def fake_login(self, url):
     return url + '?user=' + self._user_id

@@ -1,8 +1,10 @@
 import argparse
 import llfuse
 import os
+import sqlite3
 import stat
-import time
+from time import time
+from collections import defaultdict
 
 from rpc import GoogleDriveLogin
 
@@ -10,6 +12,48 @@ class MyCloudOperations(llfuse.Operations):
   def __init__(self):
     super(MyCloudOperations, self).__init__()
     self.gdl = GoogleDriveLogin()
+    self.db = sqlite3.connect(':memory:')
+    self.db.text_factory = str
+    self.db.row_factory = sqlite3.Row
+    self.cursor = self.db.cursor()        
+    self.inode_open_count = defaultdict(int)
+    self.init_tables()
+             
+  def init_tables(self):
+      '''Initialize file system tables'''
+      
+      self.cursor.execute("""
+      CREATE TABLE inodes (
+          id        INTEGER PRIMARY KEY,
+          uid       INT NOT NULL,
+          gid       INT NOT NULL,
+          mode      INT NOT NULL,
+          mtime     REAL NOT NULL,
+          atime     REAL NOT NULL,
+          ctime     REAL NOT NULL,
+          target    BLOB(256) ,
+          size      INT NOT NULL DEFAULT 0,
+          rdev      INT NOT NULL DEFAULT 0,
+          data      BLOB
+      )
+      """)
+  
+      self.cursor.execute("""
+      CREATE TABLE contents (
+          rowid     INTEGER PRIMARY KEY AUTOINCREMENT,
+          name      BLOB(256) NOT NULL,
+          inode     INT NOT NULL REFERENCES inodes(id),
+          parent_inode INT NOT NULL REFERENCES inodes(id),
+          
+          UNIQUE (name, parent_inode)
+      )""")
+      
+      # Insert root directory
+      self.cursor.execute("INSERT INTO inodes (id,mode,uid,gid,mtime,atime,ctime) "
+                          "VALUES (?,?,?,?,?,?,?)",
+                          (llfuse.ROOT_INODE, stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH, os.getuid(), os.getgid(), time(), time(), time()))
+      self.cursor.execute("INSERT INTO contents (name, parent_inode, inode) VALUES (?,?,?)",
+                          (b'..', llfuse.ROOT_INODE, llfuse.ROOT_INODE))
 
   def statfs(self):
     self.gdl.get_user_id()
@@ -63,9 +107,9 @@ class MyCloudOperations(llfuse.Operations):
 
     entry.st_blksize = 512
     entry.st_blocks = 1
-    entry.st_atime = time.time()
-    entry.st_mtime = time.time()
-    entry.st_ctime = time.time()
+    entry.st_atime = time()
+    entry.st_mtime = time()
+    entry.st_ctime = time()
 
     return entry
 

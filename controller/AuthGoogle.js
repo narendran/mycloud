@@ -195,9 +195,9 @@ AuthGoogle.listfiles = function(request, consolidated, callback) {
   console.log('MIMETYPE requested is '+mimeTypeReq);
   var filter;
   if(mimeTypeReq=='all'){
-    filter = {'maxResults': '20'};
+    filter = {'maxResults': '100'};
   } else {
-    filter = {'maxResults': '20', 'q':'mimeType = \''+mimeTypeReq+'\''}
+    filter = {'maxResults': '100', 'q':'mimeType = \''+mimeTypeReq+'\''}
   }
   googleapis.discover('drive', 'v2').execute(function(err, client) {
     client
