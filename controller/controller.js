@@ -124,21 +124,6 @@ app.get(API_ROOT + '/list/:mimeType', function (request, response) {
 
 });
 
-app.get(API_ROOT + '/read', function (request, response) {
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': 'TODO: Read'}));
-});
-
-app.get(API_ROOT + '/add', function (request, response) {
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': 'TODO: Add'}));
-});
-
-app.get(API_ROOT + '/move', function (request, response) {
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': 'TODO: Move'}));
-});
-
 app.get(API_ROOT + '/search', function (request, response) {
   console.log('User', request.user);
   response.writeHead(200, {'Content-Type' : 'application/json'});
@@ -177,6 +162,100 @@ app.get(API_ROOT + '/search', function (request, response) {
   });
 });
 
+
+
+//Parameters : file id, mime type
+app.get(API_ROOT + '/read', function (request, response) {
+  console.log('User', request.user);	
+  var auth = AuthGoogle.getGoogleAuth(request);
+  googleapis.discover('drive', 'v2').execute(function(err, client) {
+  
+	client.
+	drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
+	    .withMedia('text/plain', 'Read')
+	    .withAuthClient(auth)
+	    .execute(function(err, result) {
+	      if(err) {console.log(err)}
+	        if(result) {
+        	  console.log(result);
+        	  response.writeHead(200, {'Content-Type' : 'application/json'});
+        	  response.end(JSON.stringify({'status': err}));
+        	}
+	});
+   });
+});
+
+
+//Parameters : file id, mime type, filetext
+app.get(API_ROOT + '/add', function (request, response) {
+
+  //console.log('User', request.user);	
+  console.log('request: ' , request);
+  var auth = AuthGoogle.getGoogleAuth(request);
+  googleapis.discover('drive', 'v2').execute(function(err, client) {
+  client
+      .drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
+      .withMedia('text/plain', request.params.filetext)
+      .withAuthClient(auth)
+      .execute(function(err, result) {
+        console.log('error:', err, 'inserted:', result.id)
+      });
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+  response.end(JSON.stringify({'status': err}));
+});
+});
+
+
+app.get(API_ROOT + '/move', function (request, response) {
+  console.log('User', request.user);	
+  var auth = AuthGoogle.getGoogleAuth(request);
+  googleapis.discover('drive', 'v2').execute(function(err, client) {
+  client
+      .drive.files.insert({ 'title': request.params.fileid, 'mimeType': request.params.mimeType })
+      .withMedia('text/plain', 'File moved')
+      .withAuthClient(auth)
+      .execute(function(err, result) {
+        console.log('error:', err, 'inserted:', result.id)
+      });
+function insertFileIntoFolder(folderId, fileId) {
+  var body = {'id': fileId};
+  var request = gapi.client.drive.children.insert({
+    'folderId': folderId,
+    'resource': body
+  });
+  request.execute(function(resp) { });
+}
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+  response.end(JSON.stringify({'status': err}));
+});
+});
+
+
+//Parameters : file id, mime type
+app.get(API_ROOT + '/update', function (request, response) {
+  console.log('User', request.user);	
+  var auth = AuthGoogle.getGoogleAuth(request);
+  googleapis.discover('drive', 'v2').execute(function(err, client) {
+ client
+      .drive.files.update({ 'fileId': request.params.fileid})
+      .withMedia('text/plain', 'File updated with no metadata')
+      .withAuthClient(auth)
+      .execute(function(err, result) {
+        console.log('error:', err, 'updated:', result.id)
+      });
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+  response.end(JSON.stringify({'status': err}));
+});
+});
+
+
+app.get(API_ROOT + '/share', function (request, response) {
+  response.writeHead(200, {'Content-Type' : 'application/json'});
+  response.end(JSON.stringify({'status': 'TODO: Update'}));
+});
+
+
+
 app.get(API_ROOT + '/delete/:fileid', function (request, response) {
   console.log("FILE ID : "+request.params.fileid);
   var auth = AuthGoogle.getGoogleAuth(request);
@@ -195,11 +274,6 @@ app.get(API_ROOT + '/delete/:fileid', function (request, response) {
       });
   });
   
-});
-
-app.get(API_ROOT + '/update', function (request, response) {
-  response.writeHead(200, {'Content-Type' : 'application/json'});
-  response.end(JSON.stringify({'status': 'TODO: Update'}));
 });
 
 app.get(API_ROOT + '/info', function(request, response) {
