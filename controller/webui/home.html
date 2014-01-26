@@ -14,6 +14,7 @@
 	<link href="css/jquery.cluetip.css" rel="stylesheet">
 	<link href="css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
 	<link rel="stylesheet" type="text/css" href="css/DT_bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="http://bootboxjs.com/css/main.css">
 	<style type="text/css">
 		body {
 			padding-top: 40px;
@@ -23,6 +24,10 @@
 
 		.green {
 			background-color: lavender;
+		}
+
+		.btn {
+			padding: 0px 0px;
 		}
 
 	</style>
@@ -89,6 +94,7 @@
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
     <script src="js/jquery.cluetip.min.js"></script>
+    <script src="js/bootbox.min.js"></script>
     <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
     ]
     <script type="text/javascript">
@@ -98,7 +104,7 @@
     			$.each( data, function( key, val ) {
     				var retval;
     				if(val.size) {
-    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>',val.size,val.lastmodified]);
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a> <button class=\"btn btn-danger btn-mini\" id=\"'+val.id+'\" onclick=\"deleteFile(this)\"><i class=\"icon-white icon-trash\"></i> delete</button>',val.size,val.lastmodified]);
     				}
     				else {
     					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
@@ -120,14 +126,28 @@
     			}
     		});
     	});
-    	function closeForm() {
-    		$("#messageSent").show("slow");
-    		setTimeout(
-    			'$("#messageSent").hide();$("#contactForm").slideUp("slow")',
-    			2000);
-    	}
-    	
-    </script>
+
+function closeForm() {
+	$("#messageSent").show("slow");
+	setTimeout(
+		'$("#messageSent").hide();$("#contactForm").slideUp("slow")',
+		2000);
+}
+
+function deleteFile(obj){
+	bootbox.confirm("Are you sure?", function(result) {
+		console.log("Confirm deletion: "+result);
+		if(result){
+			$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
+				console.log(data);
+				$("#"+obj['id']).hide();
+			});
+		} 
+	}); 
+
+}
+
+</script>
 </script>
 </body>
 </html>

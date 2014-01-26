@@ -177,10 +177,10 @@ app.get(API_ROOT + '/read', function (request, response) {
 	    .execute(function(err, result) {
 	      if(err) {console.log(err)}
 	        if(result) {
-        	  console.log(result);
-        	  response.writeHead(200, {'Content-Type' : 'application/json'});
-        	  response.end(JSON.stringify({'status': err}));
+        	  console.log(result); 
         	}
+          response.writeHead(200, {'Content-Type' : 'application/json'});
+          response.end(JSON.stringify({'status': err}));
 	});
    });
 });
@@ -265,12 +265,19 @@ app.get(API_ROOT + '/delete/:fileid', function (request, response) {
     .drive.files.delete({'fileId':request.params.fileid.toString()})
     .withAuthClient(auth)
     .execute(function(err, result) {
-      if(err) {console.log(err)}
+      if(err) {console.log(err)
+          response.writeHead(200, {'Content-Type' : 'application/json'});
+          response.end(JSON.stringify({'status': 'Failed'}));
+          return;
+      }
+
         if(result) {
           console.log(result);
           response.writeHead(200, {'Content-Type' : 'application/json'});
-          response.end(JSON.stringify({'status': 'TODO: Delete'}));
+          response.end(JSON.stringify({'status': 'Success'}));
+          
         }
+        
       });
   });
   
