@@ -99,7 +99,8 @@ AuthGoogle.convertFromGoogleFile = function(file) {
     'editable': file.editable,
     'thumbnail': file.thumbnailLink,
     'embed' : file.embedLink,
-    'id' : file.id
+    'id' : file.id,
+    'service': 'Gdrive'
   }
 }
 

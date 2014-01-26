@@ -120,7 +120,8 @@ AuthDropbox.convertFromDropboxFile = function(file) {
     'lastmodified': file.modified,
     'id' : 0,
     'path': file.path,
-    'url': 'https://www.dropbox.com/home' + file.path
+    'url': 'https://www.dropbox.com/home' + file.path,
+    'service': 'Dropbox'
   }
   console.log(op_file);
   return op_file;
