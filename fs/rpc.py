@@ -7,7 +7,7 @@ import json
 import oauth2 as oauth
 import time
 import urllib
-import urlparse
+from urlparse import urlparse, urlunparse
 
 # Figure out a way to store these securely instead of having it open on github.
 CLIENT_ID = '690836899812-0uhjbi8s679d7nlpou7ku325v09gdmrt.apps.googleusercontent.com'
@@ -22,14 +22,16 @@ AUTHORIZE_URL_PARAMS = {
   'scope': 'https://www.googleapis.com/auth/userinfo.email'
 }
 
-CONTROLLER_AUTH_URL = 'http://localhost:5000/api/v1/authme'
+CONTROLLER_BASE_URL = 'http://localhost:5000/api/v1'
+TOKENINFO_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
+
 MYCLOUD_DIR = os.environ['HOME'] + '/.mycloud'
 KEYS_FILE = 'keyfile'
-
 
 class GoogleDriveLogin:
   def __init__(self):
     self._access_token = None
+    self._user_id = None
     #self._consumer = oauth.Consumer(key=CONSUMER_KEY,
     #    secret=CONSUMER_SECRET)
     self._connection = httplib.HTTPSConnection('accounts.google.com')
@@ -53,8 +55,16 @@ class GoogleDriveLogin:
     if 'access_token' in self._keys:
       self._access_token = self._keys['access_token']
 
+    if 'user_id' in self._keys:
+      self._user_id = self._keys['user_id']
+
   def write_access_token(self, access_token):
     self._keys['access_token'] = self._access_token = access_token
+    handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'w')
+    handle.write(json.dumps(self._keys))
+
+  def write_user_id(self, user_id):
+    self._keys['user_id'] = self._user_id = user_id
     handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'w')
     handle.write(json.dumps(self._keys))
 
@@ -97,13 +107,22 @@ class GoogleDriveLogin:
     parsed_response = json.loads(response)
     self.write_access_token(parsed_response['access_token'])
 
-    x = urllib.urlopen('%s?%s' % (CONTROLLER_AUTH_URL,
-          urllib.urlencode({'access_token': self._access_token})))
-    print x.read()
-    print x.info()
+    # x = urllib.urlopen('%s?%s' % (CONTROLLER_AUTH_URL,
+    #      urllib.urlencode({'access_token': self._access_token})))
+    # print x.read()
 
-  def getinfo(self):
-    pass
+  def get_user_id(self):
+    self.authenticate()
+    resp = urllib.urlopen('%s?%s' % (TOKENINFO_URL, urllib.urlencode({'access_token': self._access_token})))
+    js = json.loads(resp.read())
+    self.write_user_id(js['user_id'])
+
+  def fake_login(self, url):
+    return url + '?user=' + self._user_id
+
+  def get_info(self):
+    x = self.fake_login(CONTROLLER_BASE_URL + '/info')
+    return json.loads(urllib.urlopen(x).read())
 
 if __name__ == '__main__':
   gdl = GoogleDriveLogin()

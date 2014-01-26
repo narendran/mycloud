@@ -10,15 +10,15 @@ class MyCloudOperations(llfuse.Operations):
     self.gdl = GoogleDriveLogin()
 
   def statfs(self):
-    self.gdl.authenticate()
+    self.gdl.get_user_id()
     stat_ = llfuse.StatvfsData()
 
     free_bytes = 0
     total_bytes = 0
 
     info = self.gdl.get_info()
-    free_bytes += info['freeBytes']
-    total_bytes += info['totalBytes']
+    free_bytes += info['free_bytes']
+    total_bytes += info['total_bytes']
 
     stat_.f_bsize = 512
     stat_.f_frsize = 512
