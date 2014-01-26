@@ -79,11 +79,7 @@ everyauth.dropbox
 
 
 AuthDropbox.listfiles = function(request, consolidated, callback) {
-    console.log("ENTERED DFLFSHHDSFKLHF");
   if (request && request.user && request.user.dropbox && request.user.dropbox.access_token) {
-    console.log(AuthDropbox.ApiBaseUrl + 'metadata/dropbox?',
-      request.user.dropbox.access_token,
-      request.user.dropbox.access_secret)
     everyauth.dropbox.oauth.get(
       AuthDropbox.ApiBaseUrl + 'metadata/dropbox',
       request.user.dropbox.access_token,
@@ -93,7 +89,7 @@ AuthDropbox.listfiles = function(request, consolidated, callback) {
           console.log('Error while fetching file list: ', err, 'with result', op);
         } else {
           var data = JSON.parse(op);
-          consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data));
+          // consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data)); // Skip the root (and parent) directory.
           //console.log(data);
           for (var i=0; i<data.contents.length; i++) {
             consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data.contents[i]));
@@ -118,7 +114,7 @@ AuthDropbox.convertFromDropboxFile = function(file) {
     'filename': path_broken[path_broken.length-1],
     'size': file.bytes,
     'lastmodified': file.modified,
-    'id' : 0,
+    'id' : file.path,                      // Dropbox files don't have ids. But path is the only unique identifier for these files. 
     'path': file.path,
     'url': 'https://www.dropbox.com/home' + file.path,
     'service': 'Dropbox'
