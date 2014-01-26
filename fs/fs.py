@@ -151,8 +151,9 @@ class MyCloudOperations(llfuse.Operations):
     
     i = off
     for child in node.children[off:]:
-      i += 1
-      yield (child.name.replace('/', '\/'), self.getattr(child.id), i)
+      if child.name.count('/') == 0:
+        i += 1
+        yield (child.name.replace('/', '//'), self.getattr(child.id), i)
 
   def getattr(self, inode):
     node = Inode.inodes[inode]
