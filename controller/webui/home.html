@@ -143,7 +143,7 @@ function deleteFile(obj){
 	bootbox.confirm("Are you sure?", function(result) {
 		console.log("Confirm deletion: "+result);
 		if(result){
-			$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
+			$.getJSON( "/api/v1/delete?path="+obj['id'], function( data ) {
 				console.log(data);
 				$("#"+obj['id']).hide();
 			});

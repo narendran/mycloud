@@ -102,7 +102,8 @@ AuthGoogle.convertFromGoogleFile = function(file) {
     'id' : file.id,
     'parentId': file.parents.length > 0 ? file.parents[0].id : null,
     'isTopLevelChild': file.parents.length > 0 ? file.parents[0].isRoot : false,
-    'isDirectory': file.mimeType == 'application/vnd.google-apps.folder' ? true : false
+    'isDirectory': file.mimeType == 'application/vnd.google-apps.folder' ? true : false,
+    'service': 'Gdrive'
   }
 }
 
