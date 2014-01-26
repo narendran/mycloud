@@ -8,7 +8,7 @@ var AuthGoogle = {};
 
 AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
   console.log(googleMetadata);
-  User.find({'id': googleMetadata.id}, function(err, users) {
+  User.find({'google.id': googleMetadata.id}, function(err, users) {
     if(err) throw err;
     var user;
     if(users.length > 0) {
@@ -18,13 +18,13 @@ AuthGoogle.findOrCreateUserByGoogleData = function(googleMetadata, promise) {
        user = new User();
      }
 
-     user.id = googleMetadata.id;
      user.given_name = googleMetadata.given_name;
      user.family_name = googleMetadata.family_name;
      user.picture = googleMetadata.picture;
      if (! user.google) {
        user.google = {};
      }
+     user.google.id = googleMetadata.id;
      user.google.access_token = googleMetadata.id_token;
      user.google.refresh_token = googleMetadata.refresh_token;
      user.google.access_token_expiry = googleMetadata.access_token_expiry;

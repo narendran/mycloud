@@ -12,11 +12,11 @@ var UserModel = config.mongoose.model('User', require('./User'));
 var API_ROOT = '/api/v1';
 
 everyauth.everymodule.findUserById(function(userId, callback) {
-    UserModel.find({'id': userId}, function(err, users) {
-      if(err) throw err;
-      callback(null, users[0]);
-    });
+  UserModel.find({'_id': userId}, function(err, users) {
+    if(err) throw err;
+    callback(null, users[0]);
   });
+});
 
 var app = express();
 
