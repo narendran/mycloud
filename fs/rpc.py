@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import errno
+import os
 import httplib
 import json
 import oauth2 as oauth
@@ -21,6 +23,8 @@ AUTHORIZE_URL_PARAMS = {
 }
 
 CONTROLLER_AUTH_URL = 'http://localhost:5000/api/v1/authme'
+MYCLOUD_DIR = os.environ['HOME'] + '/.mycloud'
+KEYS_FILE = 'keyfile'
 
 
 class GoogleDriveLogin:
@@ -29,6 +33,30 @@ class GoogleDriveLogin:
     #self._consumer = oauth.Consumer(key=CONSUMER_KEY,
     #    secret=CONSUMER_SECRET)
     self._connection = httplib.HTTPSConnection('accounts.google.com')
+
+    try:
+      os.makedirs(MYCLOUD_DIR)
+    except OSError as exception:
+      if exception.errno != errno.EEXIST:
+        raise
+
+    self.read_keys()
+
+  def read_keys(self):
+    handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'r')
+    try:
+      self._keys = json.loads(handle.read())
+      print 'Keys: ', self._keys
+    except ValueError:
+      self._keys = {}
+
+    if 'access_token' in self._keys:
+      self._access_token = self._keys['access_token']
+
+  def write_access_token(self, access_token):
+    self._keys['access_token'] = self._access_token = access_token
+    handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'w')
+    handle.write(json.dumps(self._keys))
 
   def authenticate(self):
     if self._access_token is not None:
@@ -67,7 +95,7 @@ class GoogleDriveLogin:
     print response
 
     parsed_response = json.loads(response)
-    self._access_token = parsed_response['access_token']
+    self.write_access_token(parsed_response['access_token'])
 
     x = urllib.urlopen('%s?%s' % (CONTROLLER_AUTH_URL,
           urllib.urlencode({'access_token': self._access_token})))

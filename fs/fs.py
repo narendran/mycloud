@@ -1,5 +1,6 @@
 import argparse
 import llfuse
+import os
 
 from rpc import GoogleDriveLogin
 
@@ -30,7 +31,6 @@ class MyCloudOperations(llfuse.Operations):
     stat_.f_favail = stat_.f_ffree = stat_.f_files = 10000
 
     return stat_
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='MyCloud')
