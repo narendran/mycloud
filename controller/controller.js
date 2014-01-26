@@ -306,6 +306,8 @@ app.get(API_ROOT + '/share', function (request, response) {
 
 
 app.get(API_ROOT + '/delete/:fileid', function (request, response) {
+  if (!request.params.fileid.startswith('/')) {
+  
   console.log("FILE ID : "+request.params.fileid);
   var auth = AuthGoogle.getGoogleAuth(request);
   
@@ -314,23 +316,44 @@ app.get(API_ROOT + '/delete/:fileid', function (request, response) {
     .drive.files.delete({'fileId':request.params.fileid.toString()})
     .withAuthClient(auth)
     .execute(function(err, result) {
-      if(err) {console.log(err)
-          response.writeHead(200, {'Content-Type' : 'application/json'});
-          response.end(JSON.stringify({'status': 'Failed'}));
-          return;
+      if(err) {
+          failureResponse(result);
       }
-
-        if(result) {
-          console.log(result);
-          response.writeHead(200, {'Content-Type' : 'application/json'});
-          response.end(JSON.stringify({'status': 'Success'}));
-          
-        }
-        
-      });
+      if(result) {
+        successResponse(result);
+      }
+    });
   });
-  
+  } else {
+  console.log("FILE ID : "+request.params.fileid);
+    everyauth.dropbox.oauth.delete(
+      AuthDropbox.ApiBaseUrl + 'fileops/delete?root=dropbox&path=' + request.params.fileid,
+      request.user.dropbox.access_token,
+      request.user.dropbox.access_secret,
+      function (err, res) {
+        console.log("FILasfdfsdE ID : "+request.params.fileid);
+        if (err) {
+          console.log('Error while deleting file: ', path, 'with result', res);
+          failureResponse(result);
+        } else {
+          successResponse(result);
+        }
+      });
+  }
 });
+
+function successResponse(result) {
+    console.log(result);
+    response.writeHead(200, {'Content-Type' : 'application/json'});
+    response.end(JSON.stringify({'status': 'Success'}));
+}
+
+function failureResponse(result) {
+    console.log(result);
+    response.writeHead(200, {'Content-Type' : 'application/json'});
+    response.end(JSON.stringify({'status': 'Failed'}));
+}
+
 
 app.get(API_ROOT + '/info', function(request, response) {
   response.writeHead(200, {'Content-Type' : 'application/json'});

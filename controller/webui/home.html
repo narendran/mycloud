@@ -143,10 +143,17 @@ function deleteFile(obj){
 	bootbox.confirm("Are you sure?", function(result) {
 		console.log("Confirm deletion: "+result);
 		if(result){
-			$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
-				console.log(data);
-				$("#"+obj['id']).hide();
-			});
+			if (obj['service'] == 'Gdrive') {
+				$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
+					console.log(data);
+					$("#"+obj['id']).hide();
+				});
+			} else { // Must be dropbox.
+				$.getJSON( "/api/v1/delete/"+obj['id'], function( data ) {
+					console.log(data);
+					$("#"+obj['id']).hide();
+				});
+			}
 		} 
 	}); 
 

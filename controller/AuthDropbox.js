@@ -79,11 +79,7 @@ everyauth.dropbox
 
 
 AuthDropbox.listfiles = function(request, consolidated, callback) {
-    console.log("ENTERED DFLFSHHDSFKLHF");
   if (request && request.user && request.user.dropbox && request.user.dropbox.access_token) {
-    console.log(AuthDropbox.ApiBaseUrl + 'metadata/dropbox?',
-      request.user.dropbox.access_token,
-      request.user.dropbox.access_secret)
     everyauth.dropbox.oauth.get(
       AuthDropbox.ApiBaseUrl + 'metadata/dropbox',
       request.user.dropbox.access_token,
@@ -118,7 +114,7 @@ AuthDropbox.convertFromDropboxFile = function(file) {
     'filename': path_broken[path_broken.length-1],
     'size': file.bytes,
     'lastmodified': file.modified,
-    'id' : 0,
+    'id' : file.path,                      // Dropbox files don't have ids. But path is the only unique identifier for these files. 
     'path': file.path,
     'url': 'https://www.dropbox.com/home' + file.path,
     'service': 'Dropbox'
