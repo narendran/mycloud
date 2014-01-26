@@ -89,7 +89,7 @@ AuthDropbox.listfiles = function(request, consolidated, callback) {
           console.log('Error while fetching file list: ', err, 'with result', op);
         } else {
           var data = JSON.parse(op);
-          consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data));
+          // consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data)); // Skip the root (and parent) directory.
           //console.log(data);
           for (var i=0; i<data.contents.length; i++) {
             consolidated.fileList.push(AuthDropbox.convertFromDropboxFile(data.contents[i]));

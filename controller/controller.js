@@ -305,10 +305,13 @@ app.get(API_ROOT + '/share', function (request, response) {
 
 
 
-app.get(API_ROOT + '/dropdelete', function (request, response) {
+app.get(API_ROOT + '/delete', function (request, response) {
+  // Currently, a very hacky method. If it starts with '/'
+  // then it must be a path and hence a dropbox request
   var path = request.param("path")
-  console.log("FILE ID : "+request.params.fileid);
-    everyauth.dropbox.oauth.delete(
+  if (typeof path == "string" && path.substring(0,1) == "/") { 
+    console.log("path : "+path);
+    everyauth.dropbox.oauth.get(
       AuthDropbox.ApiBaseUrl + 'fileops/delete?root=dropbox&path=' + path,
       request.user.dropbox.access_token,
       request.user.dropbox.access_secret,
@@ -316,41 +319,41 @@ app.get(API_ROOT + '/dropdelete', function (request, response) {
         console.log(" ID : "+path);
         if (err) {
           console.log('Error while deleting file: ', path, 'with result', res, 'and error', err);
-          failureResponse(result);
+          console.log(res);
+          failureResponse(res, response);
         } else {
-          successResponse(result);
+          console.log(res);
+          successResponse(res, response);
         }
       });
-  }
-});
-
-
-app.get(API_ROOT + '/delete/:fileid', function (request, response) {
-  console.log("FILE ID : "+request.params.fileid);
-  var auth = AuthGoogle.getGoogleAuth(request);
+  } else {
+    var auth = AuthGoogle.getGoogleAuth(request);
   
-  googleapis.discover('drive', 'v2').execute(function(err, client) {
+    googleapis.discover('drive', 'v2').execute(function(err, client) {
     client
-    .drive.files.delete({'fileId':request.params.fileid.toString()})
+    .drive.files.delete({'fileId':path.toString()})
     .withAuthClient(auth)
     .execute(function(err, result) {
       if(err) {
-          failureResponse(result);
       }
       if(result) {
-        successResponse(result);
+        successResponse(result, response);
       }
     });
   });
+  
+  }
+  
 });
 
-function successResponse(result) {
+
+function successResponse(result, response) {
     console.log(result);
     response.writeHead(200, {'Content-Type' : 'application/json'});
     response.end(JSON.stringify({'status': 'Success'}));
 }
 
-function failureResponse(result) {
+function failureResponse(result, response) {
     console.log(result);
     response.writeHead(200, {'Content-Type' : 'application/json'});
     response.end(JSON.stringify({'status': 'Failed'}));
