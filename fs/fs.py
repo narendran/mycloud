@@ -1,4 +1,5 @@
 import argparse
+import errno
 import llfuse
 import os
 import sqlite3
@@ -7,6 +8,10 @@ from time import time
 from collections import defaultdict
 
 from rpc import GoogleDriveLogin
+    
+class NoSuchRowError(Exception):
+  def __str__(self):
+    return 'Query produced 0 result rows'
 
 class MyCloudOperations(llfuse.Operations):
   def __init__(self):
@@ -18,7 +23,22 @@ class MyCloudOperations(llfuse.Operations):
     self.cursor = self.db.cursor()        
     self.inode_open_count = defaultdict(int)
     self.init_tables()
-             
+              
+  def get_row(self, *a, **kw):
+    self.cursor.execute(*a, **kw) 
+    try:
+        row = self.cursor.next()
+    except StopIteration:
+        raise NoSuchRowError()
+    try:
+        self.cursor.next()
+    except StopIteration:
+        pass
+    else:
+        raise NoUniqueValueError()
+
+    return row
+
   def init_tables(self):
       '''Initialize file system tables'''
       
@@ -79,38 +99,56 @@ class MyCloudOperations(llfuse.Operations):
     return stat_
 
   def lookup(self, parent_inode, name):
-    raise 'Lookup not implemented'
+    if name == '.':
+      inode = parent_inode
+    elif name == '..':
+      inode = self.get_row("SELECT * FROM contents WHERE inode=?",
+                           (parent_inode,))['parent_inode']
+    else:
+      try:
+        inode = self.get_row("SELECT * FROM contents WHERE name=? AND parent_inode=?",
+                             (name, parent_inode))['inode']
+      except NoSuchRowError:
+        raise(llfuse.FUSEError(errno.ENOENT))
+    
+    return self.getattr(inode)
 
   def opendir(self, inode):
     return inode
 
-  def readdir(self, inode, offset):
-    raise 'Readdir not implemented'
+  def readdir(self, inode, off):
+    if off == 0:
+        off = -1
+        
+    cursor2 = self.db.cursor()
+    cursor2.execute("SELECT * FROM contents WHERE parent_inode=? "
+                    'AND rowid > ? ORDER BY rowid', (inode, off))
+    
+    for row in cursor2:
+        yield (row['name'], self.getattr(row['inode']), row['rowid'])
 
   def getattr(self, inode):
+    row = self.get_row('SELECT * FROM inodes WHERE id=?', (inode,))
+    
     entry = llfuse.EntryAttributes()
     entry.st_ino = inode
     entry.generation = 0
     entry.entry_timeout = 300
     entry.attr_timeout = 300
-
-    if inode == 1:
-      entry.st_mode = stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
-    else:
-      entry.st_mode = stat.S_IFDIR
-
-    entry.st_nlink = 1
-    entry.st_uid = os.getuid()
-    entry.st_gid = os.getgid()
-    entry.st_rdev = 0
-    entry.st_size = 0
-
+    entry.st_mode = row['mode']
+    entry.st_nlink = self.get_row("SELECT COUNT(inode) FROM contents WHERE inode=?",
+                                 (inode,))[0]
+    entry.st_uid = row['uid']
+    entry.st_gid = row['gid']
+    entry.st_rdev = row['rdev']
+    entry.st_size = row['size']
+    
     entry.st_blksize = 512
     entry.st_blocks = 1
-    entry.st_atime = time()
-    entry.st_mtime = time()
-    entry.st_ctime = time()
-
+    entry.st_atime = row['atime']                          
+    entry.st_mtime = row['mtime']
+    entry.st_ctime = row['ctime']
+    
     return entry
 
 if __name__ == '__main__':
@@ -122,9 +160,9 @@ if __name__ == '__main__':
     llfuse.init(operations, args.mountpoint, [ b'fsname=CloudFS' ])
     
     try:
-        llfuse.main(single=False)
+        llfuse.main(single=True)
     except:
-        llfuse.close(unmount=False)
+        llfuse.close(unmount=True)
         raise
 
     llfuse.close()
