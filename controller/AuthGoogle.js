@@ -99,7 +99,10 @@ AuthGoogle.convertFromGoogleFile = function(file) {
     'editable': file.editable,
     'thumbnail': file.thumbnailLink,
     'embed' : file.embedLink,
-    'id' : file.id
+    'id' : file.id,
+    'parentId': file.parents.length > 0 ? file.parents[0].id : null,
+    'isTopLevelChild': file.parents.length > 0 ? file.parents[0].isRoot : false,
+    'isDirectory': file.mimeType == 'application/vnd.google-apps.folder' ? true : false
   }
 }
 
@@ -196,9 +199,9 @@ AuthGoogle.listfiles = function(request, consolidated, callback) {
     console.log('MIMETYPE requested is '+mimeTypeReq);
     var filter;
     if(mimeTypeReq=='all'){
-      filter = {'maxResults': '100'};
+      filter = {'maxResults': '500'};
     } else {
-      filter = {'maxResults': '100', 'q':'mimeType = \''+mimeTypeReq+'\''}
+      filter = {'maxResults': '500', 'q':'mimeType = \''+mimeTypeReq+'\''}
     }
     googleapis.discover('drive', 'v2').execute(function(err, client) {
       client

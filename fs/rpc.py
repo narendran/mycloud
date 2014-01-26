@@ -22,13 +22,14 @@ AUTHORIZE_URL_PARAMS = {
   'scope': 'https://www.googleapis.com/auth/userinfo.email'
 }
 
-CONTROLLER_BASE_URL = 'http://localhost:5000/api/v1'
 TOKENINFO_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
 
 MYCLOUD_DIR = os.environ['HOME'] + '/.mycloud'
 KEYS_FILE = 'keyfile'
 
 class GoogleDriveLogin:
+  CONTROLLER_BASE_URL = 'http://localhost:5000/api/v1'
+
   def __init__(self):
     self._access_token = None
     self._user_id = None
@@ -152,7 +153,7 @@ class GoogleDriveLogin:
     return url + '?user=' + self._user_id
 
   def get_info(self):
-    x = self.fake_login(CONTROLLER_BASE_URL + '/info')
+    x = self.fake_login(GoogleDriveLogin.CONTROLLER_BASE_URL + '/info')
     return json.loads(urllib.urlopen(x).read())
 
 if __name__ == '__main__':
