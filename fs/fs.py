@@ -43,11 +43,11 @@ class MyCloudOperations(llfuse.Operations):
   def __init__(self):
     super(MyCloudOperations, self).__init__()
     self.gdl = GoogleDriveLogin()
-    self.gdl.get_user_id()
     self.inode_open_count = defaultdict(int)
     self.tree = {}
     self.init_tree()
     self.fetch_indices()
+    self.gdl.get_user_id()
 
   def init_tree(self):
     self.tree = ROOT_INODE

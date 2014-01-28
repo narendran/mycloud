@@ -211,10 +211,11 @@ AuthGoogle.listfiles = function(request, consolidated, callback) {
           .execute(function(err, result) {
             if (err) {
               console.error('Error while fetching file list: ', err, 'with result', result);
-            }
-            for (var i=0; i<result.items.length; i++) {
-              console.log('error:', err, 'inserted:', result.items[i]['title']);
-              consolidated.fileList.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
+            } else {
+              for (var i=0; i<result.items.length; i++) {
+                console.log('error:', err, 'inserted:', result.items[i]['title']);
+                consolidated.fileList.push(AuthGoogle.convertFromGoogleFile(result.items[i]))
+              }
             }
             console.log("After finishing call");
             console.log(new Date());

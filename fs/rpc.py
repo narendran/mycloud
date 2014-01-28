@@ -147,7 +147,10 @@ class GoogleDriveLogin:
 
     parsed_response = json.loads(response)
     self.write_access_token(parsed_response['access_token'])
-    self.write_refresh_token(parsed_response['refresh_token'])
+
+    if 'refresh_token' in parsed_response:
+      print 'Hey! We found a refresh token in the refresh response!'
+      self.write_refresh_token(parsed_response['refresh_token'])
 
   def fake_login(self, url):
     return url + '?user=' + self._user_id
